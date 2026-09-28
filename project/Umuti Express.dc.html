@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<template id="__bundler_thumbnail" data-bg-color="#0C8F6E">
+  <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <rect x="30" y="50" width="60" height="24" rx="12" fill="#ffffff"/>
+    <line x1="60" y1="50" x2="60" y2="74" stroke="#0C8F6E" stroke-width="4"/>
+  </svg>
+</template>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@500;700&family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="./image-slot.js"></script>
+<style>
+  html, body { margin:0; overflow-x:hidden; }
+  body { font-family:'Open Sans',sans-serif; background:#FFFFFF; color:#16323D; }
+  a { color:#0C8F6E; text-decoration:none; }
+  a:hover { color:#076B54; }
+  * { box-sizing:border-box; }
+  input, textarea, select { font-family:'Open Sans',sans-serif; }
+  ::placeholder { color:rgba(22,50,61,0.42); }
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;background:#FFFFFF;">
+
+  <!-- ===== TOP NAV ===== -->
+  <div style="position:sticky;top:0;z-index:40;background:#FFFFFF;box-shadow:0 1px 2px rgba(11,40,50,0.10), 0 1px 4px rgba(11,40,50,0.05);">
+    <div style="max-width:1180px;margin:0 auto;padding:0 {{ gutterPad }};height:76px;display:flex;align-items:center;justify-content:space-between;gap:32px;">
+      <div style="display:flex;align-items:center;gap:32px;">
+        <div onClick="{{ goHome }}" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+          <div style="width:36px;height:36px;border-radius:12px;background:#0C8F6E;display:flex;align-items:center;justify-content:center;color:#fff;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="9" width="20" height="6" rx="3"/><line x1="12" y1="9" x2="12" y2="15" stroke="#0C8F6E" stroke-width="1.5"/></svg>
+          </div>
+          <span style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:20px;color:#16323D;">Umuti Express</span>
+        </div>
+        <div style="display:{{ navLinksDisplay }};align-items:center;gap:24px;">
+          <a onClick="{{ navBrowse }}" style="cursor:pointer;font-weight:600;font-size:14.5px;color:{{ navColorBrowse }};">Shop</a>
+          <a onClick="{{ navPharmacies }}" style="cursor:pointer;font-weight:600;font-size:14.5px;color:{{ navColorPharmacies }};">Nearby pharmacies</a>
+          <a onClick="{{ navTracking }}" style="cursor:pointer;font-weight:600;font-size:14.5px;color:{{ navColorTracking }};">Track order</a>
+          <a onClick="{{ navChat }}" style="cursor:pointer;font-weight:600;font-size:14.5px;color:{{ navColorChat }};">Chat with pharmacist</a>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div onClick="{{ navAccount }}" style="display:{{ accountDisplay }};align-items:center;gap:8px;cursor:pointer;color:#16323D;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7v1H4v-1Z"/></svg>
+          <span style="font-weight:600;font-size:14.5px;">Account</span>
+        </div>
+        <div onClick="{{ navCart }}" style="position:relative;display:flex;align-items:center;gap:8px;cursor:pointer;background:#EAF6F1;color:#076B54;padding:10px 18px;border-radius:999px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 8h12l-1.2 10.2a2 2 0 0 1-2 1.8H9.2a2 2 0 0 1-2-1.8L6 8Z" fill="currentColor"/><path d="M9 8V6a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+          <span style="font-weight:700;font-size:14.5px;">Cart</span>
+          <sc-if value="{{ cartCount }}" hint-placeholder-val="{{ 0 }}">
+            <span style="background:#076B54;color:#fff;font-size:11.5px;font-weight:800;border-radius:999px;min-width:20px;height:20px;display:flex;align-items:center;justify-content:center;padding:0 5px;">{{ cartCount }}</span>
+          </sc-if>
+        </div>
+        <button onClick="{{ toggleMobileMenu }}" style="display:{{ hamburgerDisplay }};align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;border:none;background:#F4F7F6;color:#16323D;cursor:pointer;flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <sc-if value="{{ mobileMenuOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;padding:4px {{ gutterPad }} 16px {{ gutterPad }};box-shadow:inset 0 1px 0 rgba(11,40,50,0.08);">
+        <a onClick="{{ navBrowse }}" style="cursor:pointer;padding:14px 0;font-weight:700;font-size:15px;color:{{ navColorBrowse }};">Shop</a>
+        <a onClick="{{ navPharmacies }}" style="cursor:pointer;padding:14px 0;font-weight:700;font-size:15px;color:{{ navColorPharmacies }};">Nearby pharmacies</a>
+        <a onClick="{{ navTracking }}" style="cursor:pointer;padding:14px 0;font-weight:700;font-size:15px;color:{{ navColorTracking }};">Track order</a>
+        <a onClick="{{ navChat }}" style="cursor:pointer;padding:14px 0;font-weight:700;font-size:15px;color:{{ navColorChat }};">Chat with pharmacist</a>
+        <a onClick="{{ navAccount }}" style="cursor:pointer;padding:14px 0;font-weight:700;font-size:15px;color:#16323D;">Account</a>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- toast -->
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;top:96px;right:{{ gutterPad }};z-index:60;background:#16323D;color:#fff;padding:14px 22px;border-radius:14px;box-shadow:0 4px 10px rgba(11,40,50,0.12), 0 16px 36px rgba(11,40,50,0.12);font-weight:600;font-size:14.5px;">{{ toast }}</div>
+  </sc-if>
+
+  <div style="flex:1;min-width:0;">
+
+  <!-- ===================== HOME ===================== -->
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+    <div>
+      <!-- hero -->
+      <div style="display:grid;grid-template-columns:{{ heroGridCols }};min-height:{{ heroMinHeight }};">
+        <div style="background:#0B425D;display:flex;flex-direction:column;justify-content:center;padding:{{ heroPad }};">
+          <div style="max-width:460px;margin:{{ heroTextMargin }};">
+            <h1 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:{{ heroHeadingSize }};line-height:1.12;color:#FFFFFF;margin:0 0 20px 0;">Order medicine without leaving home</h1>
+            <p style="font-size:16px;line-height:1.6;color:rgba(255,255,255,0.78);margin:0 0 32px 0;">Browse medicines from pharmacies across Lusaka, upload a prescription when needed, and get your order delivered or ready for pickup.</p>
+            <div style="display:flex;align-items:center;background:#FFFFFF;border-radius:999px;padding:6px 6px 6px 20px;margin-bottom:20px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="color:rgba(22,50,61,0.42);flex-shrink:0;"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="2.5" fill="none"/><rect x="16.5" y="16.5" width="6" height="2.6" rx="1.3" transform="rotate(45 16.5 16.5)" fill="currentColor"/></svg>
+              <input value="{{ searchQuery }}" onChange="{{ onSearchChange }}" onKeyDown="{{ onSearchKeyDown }}" placeholder="Search medicines, e.g. paracetamol" style="flex:1;min-width:0;border:none;outline:none;padding:12px 14px;font-size:14.5px;background:transparent;color:#16323D;"/>
+              <button onClick="{{ navBrowse }}" style="background:#0C8F6E;color:#fff;border:none;border-radius:999px;padding:12px 22px;font-weight:700;font-size:14.5px;cursor:pointer;">Search</button>
+            </div>
+            <div style="display:flex;gap:14px;">
+              <button onClick="{{ navPharmacies }}" style="background:rgba(255,255,255,0.12);color:#fff;border:none;border-radius:999px;padding:13px 24px;font-weight:700;font-size:14.5px;cursor:pointer;">Find nearby pharmacy</button>
+            </div>
+          </div>
+        </div>
+        <image-slot id="hero-photo" shape="rect" placeholder="Photo: pharmacist handing medicine to a customer" style="width:100%;height:100%;"></image-slot>
+      </div>
+
+      <!-- categories -->
+      <div style="max-width:1180px;margin:0 auto;padding:72px {{ gutterPad }} 0 {{ gutterPad }};">
+        <h2 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:30px;color:#16323D;margin:0 0 32px 0;">Shop by category</h2>
+        <div style="display:grid;grid-template-columns:{{ categoriesGridCols }};gap:20px;">
+          <div onClick="{{ catPain }}" style="cursor:pointer;background:#EAF6F1;border-radius:20px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;transition:transform 150ms ease;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#076B54"><path d="M12 3l4.5 4.5h-3v6h-3v-6h-3L12 3Z" opacity="0"/><circle cx="12" cy="12" r="9" fill="none" stroke="#076B54" stroke-width="2"/><path d="M8 12h8M12 8v8" stroke="#076B54" stroke-width="2" stroke-linecap="round"/></svg>
+            <span style="font-weight:700;font-size:13.5px;color:#16323D;">Pain relief</span>
+          </div>
+          <div onClick="{{ catMalaria }}" style="cursor:pointer;background:#EAF6F1;border-radius:20px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><rect x="2" y="9" width="20" height="6" rx="3" fill="#076B54"/><line x1="12" y1="9" x2="12" y2="15" stroke="#EAF6F1" stroke-width="1.5"/></svg>
+            <span style="font-weight:700;font-size:13.5px;color:#16323D;">Malaria treatment</span>
+          </div>
+          <div onClick="{{ catChronic }}" style="cursor:pointer;background:#EAF6F1;border-radius:20px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#076B54" stroke-width="2" fill="none"/><path d="M12 7v5.5l4 2.2" stroke="#076B54" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+            <span style="font-weight:700;font-size:13.5px;color:#16323D;">Chronic care</span>
+          </div>
+          <div onClick="{{ catCold }}" style="cursor:pointer;background:#EAF6F1;border-radius:20px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#076B54"><path d="M12 2c-3 4-5 7-5 10a5 5 0 0 0 10 0c0-3-2-6-5-10Z"/></svg>
+            <span style="font-weight:700;font-size:13.5px;color:#16323D;">Cold &amp; flu</span>
+          </div>
+          <div onClick="{{ catVitamins }}" style="cursor:pointer;background:#EAF6F1;border-radius:20px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#076B54"><circle cx="8" cy="9" r="3.5"/><circle cx="16" cy="9" r="3.5"/><circle cx="12" cy="16" r="3.5"/></svg>
+            <span style="font-weight:700;font-size:13.5px;color:#16323D;">Vitamins &amp; supplements</span>
+          </div>
+          <div onClick="{{ catBaby }}" style="cursor:pointer;background:#EAF6F1;border-radius:20px;padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#076B54"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7v1H4v-1Z"/></svg>
+            <span style="font-weight:700;font-size:13.5px;color:#16323D;">Baby &amp; mother care</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- featured products -->
+      <div style="max-width:1180px;margin:0 auto;padding:72px {{ gutterPad }} 0 {{ gutterPad }};">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:32px;">
+          <h2 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:30px;color:#16323D;margin:0;">Popular medicines</h2>
+          <a onClick="{{ navBrowse }}" style="cursor:pointer;font-weight:700;font-size:14.5px;">View all</a>
+        </div>
+        <div style="display:grid;grid-template-columns:{{ productsGridCols }};gap:24px;">
+          <sc-for list="{{ featuredProducts }}" as="p" hint-placeholder-count="4">
+            <div onClick="{{ p.open }}" style="cursor:pointer;background:#FFFFFF;border-radius:20px;box-shadow:0 2px 4px rgba(11,40,50,0.10), 0 8px 20px rgba(11,40,50,0.08);overflow:hidden;">
+              <image-slot id="{{ p.imgId }}" shape="rect" placeholder="{{ p.imgPlaceholder }}" style="width:100%;height:150px;"></image-slot>
+              <div style="padding:18px;">
+                <sc-if value="{{ p.rx }}" hint-placeholder-val="{{ false }}">
+                  <span style="display:inline-block;background:#FBEED9;color:#8A5A0F;font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;margin-bottom:10px;">Prescription needed</span>
+                </sc-if>
+                <div style="font-weight:700;font-size:15px;color:#16323D;margin-bottom:6px;">{{ p.name }}</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <span style="font-weight:800;font-size:16px;color:#076B54;">{{ p.priceStr }}</span>
+                  <button onClick="{{ p.add }}" style="background:#EAF6F1;color:#076B54;border:none;border-radius:999px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;">Add</button>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- how it works -->
+      <div style="max-width:1180px;margin:0 auto;padding:96px {{ gutterPad }};">
+        <h2 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:30px;color:#16323D;margin:0 0 40px 0;">How ordering works</h2>
+        <div style="display:grid;grid-template-columns:{{ threeColGrid }};gap:32px;">
+          <div>
+            <div style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:34px;color:#0C8F6E;margin-bottom:16px;">1</div>
+            <div style="font-weight:700;font-size:17px;color:#16323D;margin-bottom:8px;">Find your medicine</div>
+            <div style="font-size:14.5px;line-height:1.6;color:rgba(22,50,61,0.62);">Search or browse by category. Upload a photo of your prescription if the item requires one.</div>
+          </div>
+          <div>
+            <div style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:34px;color:#0C8F6E;margin-bottom:16px;">2</div>
+            <div style="font-weight:700;font-size:17px;color:#16323D;margin-bottom:8px;">A pharmacist checks your order</div>
+            <div style="font-size:14.5px;line-height:1.6;color:rgba(22,50,61,0.62);">Prescription items are reviewed by a licensed pharmacist before your order is prepared.</div>
+          </div>
+          <div>
+            <div style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:34px;color:#0C8F6E;margin-bottom:16px;">3</div>
+            <div style="font-weight:700;font-size:17px;color:#16323D;margin-bottom:8px;">Delivered or ready for pickup</div>
+            <div style="font-size:14.5px;line-height:1.6;color:rgba(22,50,61,0.62);">Choose home delivery, or pick up from a partner pharmacy near you.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- nearby pharmacies teaser -->
+      <div style="background:#F4F7F6;padding:96px 0;">
+        <div style="max-width:1180px;margin:0 auto;padding:0 {{ gutterPad }};display:grid;grid-template-columns:{{ twoColGrid }};gap:56px;align-items:center;">
+          <image-slot id="pharmacy-map" shape="rounded" radius="20" placeholder="Map of nearby partner pharmacies" style="width:100%;height:340px;"></image-slot>
+          <div>
+            <h2 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:32px;color:#16323D;margin:0 0 16px 0;">Pick up from a pharmacy near you</h2>
+            <p style="font-size:15px;line-height:1.6;color:rgba(22,50,61,0.62);margin:0 0 28px 0;">We work with pharmacies across Lusaka. Search by area to see opening hours, distance and stock.</p>
+            <button onClick="{{ navPharmacies }}" style="background:#0C8F6E;color:#fff;border:none;border-radius:999px;padding:14px 28px;font-weight:700;font-size:15px;cursor:pointer;">Find a pharmacy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===================== BROWSE ===================== -->
+  <sc-if value="{{ isBrowse }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:1180px;margin:0 auto;padding:48px {{ gutterPad }} 96px {{ gutterPad }};">
+      <h1 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:32px;color:#16323D;margin:0 0 28px 0;">Shop medicines</h1>
+      <div style="display:flex;align-items:center;background:#F4F7F6;border-radius:999px;padding:6px 6px 6px 20px;margin-bottom:24px;max-width:520px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="color:rgba(22,50,61,0.42);flex-shrink:0;"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="2.5" fill="none"/><rect x="16.5" y="16.5" width="6" height="2.6" rx="1.3" transform="rotate(45 16.5 16.5)" fill="currentColor"/></svg>
+        <input value="{{ searchQuery }}" onChange="{{ onSearchChange }}" placeholder="Search medicines" style="flex:1;min-width:0;border:none;outline:none;padding:10px 14px;font-size:14.5px;background:transparent;color:#16323D;"/>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:36px;">
+        <sc-for list="{{ categoryChips }}" as="c" hint-placeholder-count="6">
+          <button onClick="{{ c.select }}" style="border:none;cursor:pointer;padding:10px 18px;border-radius:999px;font-weight:700;font-size:13.5px;background:{{ c.bg }};color:{{ c.color }};">{{ c.name }}</button>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:{{ productsGridCols }};gap:24px;">
+        <sc-for list="{{ filteredProducts }}" as="p" hint-placeholder-count="8">
+          <div onClick="{{ p.open }}" style="cursor:pointer;background:#FFFFFF;border-radius:20px;box-shadow:0 2px 4px rgba(11,40,50,0.10), 0 8px 20px rgba(11,40,50,0.08);overflow:hidden;">
+            <image-slot id="{{ p.imgId }}" shape="rect" placeholder="{{ p.imgPlaceholder }}" style="width:100%;height:150px;"></image-slot>
+            <div style="padding:18px;">
+              <sc-if value="{{ p.rx }}" hint-placeholder-val="{{ false }}">
+                <span style="display:inline-block;background:#FBEED9;color:#8A5A0F;font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;margin-bottom:10px;">Prescription needed</span>
+              </sc-if>
+              <div style="font-weight:700;font-size:15px;color:#16323D;margin-bottom:4px;">{{ p.name }}</div>
+              <div style="font-size:12.5px;color:rgba(22,50,61,0.5);margin-bottom:10px;">{{ p.categoryName }}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-weight:800;font-size:16px;color:#076B54;">{{ p.priceStr }}</span>
+                <button onClick="{{ p.add }}" style="background:#EAF6F1;color:#076B54;border:none;border-radius:999px;padding:8px 16px;font-weight:700;font-size:13px;cursor:pointer;">Add</button>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:64px 0;text-align:center;color:rgba(22,50,61,0.5);font-size:15px;">No medicines match your search.</div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ===================== PRODUCT DETAIL ===================== -->
+  <sc-if value="{{ isProduct }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:1180px;margin:0 auto;padding:48px {{ gutterPad }} 96px {{ gutterPad }};">
+      <a onClick="{{ navBrowse }}" style="cursor:pointer;font-weight:700;font-size:13.5px;display:inline-flex;align-items:center;gap:6px;margin-bottom:28px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="transform:rotate(180deg);"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back to shop
+      </a>
+      <div style="display:grid;grid-template-columns:{{ twoColGrid }};gap:56px;">
+        <image-slot id="{{ selectedProduct.imgId }}" shape="rounded" radius="20" placeholder="{{ selectedProduct.imgPlaceholder }}" style="width:100%;height:420px;"></image-slot>
+        <div>
+          <div style="font-size:13px;color:rgba(22,50,61,0.5);font-weight:700;margin-bottom:10px;">{{ selectedProduct.categoryName }}</div>
+          <h1 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:30px;color:#16323D;margin:0 0 14px 0;">{{ selectedProduct.name }}</h1>
+          <div style="font-weight:800;font-size:26px;color:#076B54;margin-bottom:18px;">{{ selectedProduct.priceStr }}</div>
+          <sc-if value="{{ selectedProduct.rx }}" hint-placeholder-val="{{ false }}">
+            <div style="display:inline-flex;align-items:center;gap:8px;background:#FBEED9;color:#8A5A0F;font-size:12.5px;font-weight:800;padding:7px 14px;border-radius:999px;margin-bottom:20px;">Prescription required</div>
+          </sc-if>
+          <p style="font-size:15px;line-height:1.65;color:rgba(22,50,61,0.7);margin:0 0 28px 0;">{{ selectedProduct.blurb }}</p>
+
+          <sc-if value="{{ showRxUpload }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ startRxFlow }}" style="background:#0B425D;color:#fff;border:none;border-radius:999px;padding:15px 30px;font-weight:700;font-size:15px;cursor:pointer;">Upload prescription to order</button>
+          </sc-if>
+          <sc-if value="{{ showAddToCart }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;align-items:center;gap:20px;margin-bottom:12px;">
+              <div style="display:flex;align-items:center;gap:14px;background:#F4F7F6;border-radius:999px;padding:8px 16px;">
+                <button onClick="{{ decDetailQty }}" style="width:28px;height:28px;border-radius:999px;border:none;background:#fff;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 1px 2px rgba(11,40,50,0.10);">-</button>
+                <span style="font-weight:700;font-size:15px;min-width:16px;text-align:center;">{{ detailQty }}</span>
+                <button onClick="{{ incDetailQty }}" style="width:28px;height:28px;border-radius:999px;border:none;background:#fff;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 1px 2px rgba(11,40,50,0.10);">+</button>
+              </div>
+              <button onClick="{{ addSelectedToCart }}" style="background:#0C8F6E;color:#fff;border:none;border-radius:999px;padding:15px 30px;font-weight:700;font-size:15px;cursor:pointer;">Add to cart</button>
+            </div>
+          </sc-if>
+
+          <div style="margin-top:40px;padding-top:32px;box-shadow:inset 0 1px 0 rgba(11,40,50,0.08);">
+            <div style="font-weight:700;font-size:14px;color:#16323D;margin-bottom:16px;">Available at nearby pharmacies</div>
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <sc-for list="{{ nearbyForProduct }}" as="ph" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;justify-content:space-between;background:#F4F7F6;border-radius:14px;padding:14px 18px;">
+                  <div>
+                    <div style="font-weight:700;font-size:14px;color:#16323D;">{{ ph.name }}</div>
+                    <div style="font-size:12.5px;color:rgba(22,50,61,0.5);">{{ ph.area }} &middot; {{ ph.distance }}</div>
+                  </div>
+                  <span style="font-size:12.5px;font-weight:700;color:#076B54;">{{ ph.hours }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===================== PRESCRIPTION UPLOAD ===================== -->
+  <sc-if value="{{ isPrescription }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:640px;margin:0 auto;padding:64px {{ gutterPad }} 96px {{ gutterPad }};">
+      <h1 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:28px;color:#16323D;margin:0 0 12px 0;">Upload your prescription</h1>
+      <p style="font-size:15px;line-height:1.6;color:rgba(22,50,61,0.62);margin:0 0 32px 0;">A licensed pharmacist will review your prescription before this item is added to your order.</p>
+
+      <sc-if value="{{ rxIsNone }}" hint-placeholder-val="{{ true }}">
+        <div onClick="{{ simulateUpload }}" style="cursor:pointer;border-radius:20px;background:#F4F7F6;box-shadow:inset 0 0 0 2px transparent;padding:56px 24px;text-align:center;transition:background 150ms ease;">
+          <div style="width:56px;height:56px;border-radius:16px;background:#EAF6F1;color:#076B54;display:flex;align-items:center;justify-content:center;margin:0 auto 20px auto;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l4.5 4.5h-3v6h-3v-6h-3L12 3Z"/><path d="M5 15v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-3h-2v3H7v-3H5Z"/></svg>
+          </div>
+          <div style="font-weight:700;font-size:15px;color:#16323D;margin-bottom:6px;">Click to upload a photo of your prescription</div>
+          <div style="font-size:13px;color:rgba(22,50,61,0.5);">JPG or PNG, up to 10MB</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ rxIsUploaded }}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius:20px;background:#F4F7F6;padding:32px;display:flex;align-items:center;gap:16px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:#fff;box-shadow:0 1px 2px rgba(11,40,50,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <div style="width:16px;height:16px;border-radius:999px;border:2.5px solid #0C8F6E;border-top-color:transparent;animation:spin 800ms linear infinite;"></div>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14.5px;color:#16323D;">Uploading prescription-photo.jpg</div>
+            <div style="font-size:13px;color:rgba(22,50,61,0.5);">Sending to our pharmacy team</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ rxIsReviewing }}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius:20px;background:#F4F7F6;padding:32px;display:flex;align-items:center;gap:16px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:#FBEED9;color:#8A5A0F;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5.5l4 2.2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14.5px;color:#16323D;">A pharmacist is reviewing your prescription</div>
+            <div style="font-size:13px;color:rgba(22,50,61,0.5);">This usually takes a few minutes in this demo</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ rxIsApproved }}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius:20px;background:#EAF6F1;padding:32px;display:flex;align-items:center;gap:16px;margin-bottom:24px;">
+          <div style="width:44px;height:44px;border-radius:12px;background:#fff;color:#076B54;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 13l4.5 4.5L19 8" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:700;font-size:14.5px;color:#16323D;">Prescription approved</div>
+            <div style="font-size:13px;color:rgba(22,50,61,0.55);">Chanda M., pharmacist, confirmed your prescription</div>
+          </div>
+        </div>
+        <button onClick="{{ continueAfterApproval }}" style="background:#0C8F6E;color:#fff;border:none;border-radius:999px;padding:15px 30px;font-weight:700;font-size:15px;cursor:pointer;width:100%;">Continue to cart</button>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ===================== NEARBY PHARMACIES ===================== -->
+  <sc-if value="{{ isPharmacies }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:1180px;margin:0 auto;padding:48px {{ gutterPad }} 96px {{ gutterPad }};">
+      <h1 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:32px;color:#16323D;margin:0 0 28px 0;">Pharmacies near you</h1>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:32px;">
+        <sc-for list="{{ areaChips }}" as="a" hint-placeholder-count="6">
+          <button onClick="{{ a.select }}" style="border:none;cursor:pointer;padding:10px 18px;border-radius:999px;font-weight:700;font-size:13.5px;background:{{ a.bg }};color:{{ a.color }};">{{ a.name }}</button>
+        </sc-for>
+      </div>
+      <div ref="{{ mapContainerRef }}" style="width:100%;height:440px;border-radius:20px;overflow:hidden;box-shadow:0 2px 4px rgba(11,40,50,0.10), 0 8px 20px rgba(11,40,50,0.08);margin-bottom:32px;"></div>
+      <div style="display:grid;grid-template-columns:{{ pharmCardGrid }};gap:16px;">
+        <sc-for list="{{ pharmaciesList }}" as="ph" hint-placeholder-count="5">
+          <div style="display:flex;gap:18px;background:#FFFFFF;border-radius:20px;box-shadow:0 2px 4px rgba(11,40,50,0.10), 0 8px 20px rgba(11,40,50,0.08);padding:18px;align-items:center;">
+            <image-slot id="{{ ph.imgId }}" shape="rounded" radius="14" placeholder="Storefront photo" style="width:96px;height:96px;flex-shrink:0;"></image-slot>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:700;font-size:16px;color:#16323D;margin-bottom:4px;">{{ ph.name }}</div>
+              <div style="font-size:13px;color:rgba(22,50,61,0.55);margin-bottom:6px;">{{ ph.area }} &middot; {{ ph.distance }}</div>
+              <div style="font-size:12.5px;font-weight:700;color:#076B54;">{{ ph.hours }}</div>
+            </div>
+            <button onClick="{{ ph.select }}" style="background:{{ ph.btnBg }};color:{{ ph.btnColor }};border:none;border-radius:999px;padding:11px 20px;font-weight:700;font-size:13.5px;cursor:pointer;flex-shrink:0;">{{ ph.btnLabel }}</button>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===================== CART ===================== -->
+  <sc-if value="{{ isCart }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:1180px;margin:0 auto;padding:48px {{ gutterPad }} 96px {{ gutterPad }};">
+      <h1 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:32px;color:#16323D;margin:0 0 28px 0;">Your cart</h1>
+      <sc-if value="{{ cartEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:80px 0;text-align:center;">
+          <div style="font-size:16px;color:rgba(22,50,61,0.55);margin-bottom:24px;">Your cart is empty.</div>
+          <button onClick="{{ navBrowse }}" style="background:#0C8F6E;color:#fff;border:none;border-radius:999px;padding:14px 28px;font-weight:700;font-size:14.5px;cursor:pointer;">Browse medicines</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ cartNotEmpty }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:{{ sidebarGrid }};gap:32px;align-items:start;">
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <sc-for list="{{ cartItems }}" as="it" hint-placeholder-count="3">
+              <div style="display:flex;gap:18px;background:#FFFFFF;border-radius:20px;box-shadow:0 2px 4px rgba(11,40,50,0.10), 0 8px 20px rgba(11,40,50,0.08);padding:18px;align-items:center;">
+                <image-slot id="{{ it.imgId }}" shape="rounded" radius="14" placeholder="{{ it.imgPlaceholder }}" style="width:80px;height:80px;flex-shrink:0;"></image-slot>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-weight:700;font-size:15px;color:#16323D;margin-bottom:4px;">{{ it.name }}</div>
+                  <div style="font-size:13px;color:rgba(22,50,61,0.5);">{{ it.priceStr }} each</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;background:#F4F7F6;border-radius:999px;padding:6px 12px;">
+                  <button onClick="{{ it.dec }}" style="width:24px;height:24px;border-radius:999px;border:none;background:#fff;font-weight:800;font-size:14px;cursor:pointer;">-</button>
+                  <span style="font-weight:700;font-size:14px;min-width:14px;text-align:center;">{{ it.qty }}</span>
+                  <button onClick="{{ it.inc }}" style="width:24px;height:24px;border-radius:999px;border:none;background:#fff;font-weight:800;font-size:14px;cursor:pointer;">+</button>
+                </div>
+                <div style="font-weight:800;font-size:15px;color:#076B54;min-width:80px;text-align:right;">{{ it.lineTotalStr }}</div>
+                <button onClick="{{ it.remove }}" style="background:transparent;border:none;cursor:pointer;color:rgba(22,50,61,0.4);font-size:13px;font-weight:700;">Remove</button>
+              </div>
+            </sc-for>
+          </div>
+          <div style="background:#F4F7F6;border-radius:20px;padding:28px;">
+            <div style="font-weight:700;font-size:16px;color:#16323D;margin-bottom:20px;">Order summary</div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;color:rgba(22,50,61,0.65);margin-bottom:12px;"><span>Subtotal</span><span>{{ subtotalStr }}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;color:rgba(22,50,61,0.65);margin-bottom:20px;"><span>Delivery</span><span>{{ deliveryFeeStr }}</span></div>
+            <div style="display:flex;justify-content:space-between;font-weight:800;font-size:18px;color:#16323D;margin-bottom:24px;box-shadow:inset 0 1px 0 rgba(11,40,50,0.1);padding-top:16px;"><span>Total</span><span>{{ totalStr }}</span></div>
+            <button onClick="{{ navCheckout }}" style="background:#0C8F6E;color:#fff;border:none;border-radius:999px;padding:15px 0;font-weight:700;font-size:15px;cursor:pointer;width:100%;">Go to checkout</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ===================== CHECKOUT ===================== -->
+  <sc-if value="{{ isCheckout }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:1180px;margin:0 auto;padding:48px {{ gutterPad }} 96px {{ gutterPad }};">
+      <h1 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:32px;color:#16323D;margin:0 0 28px 0;">Checkout</h1>
+      <div style="display:grid;grid-template-columns:{{ sidebarGrid }};gap:32px;align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:28px;">
+
+          <div style="background:#FFFFFF;border-radius:20px;box-shadow:0 2px 4px rgba(11,40,50,0.10), 0 8px 20px rgba(11,40,50,0.08);padding:28px;">
+            <div style="font-weight:700;font-size:16px;color:#16323D;margin-bottom:18px;">How should we get this to you?</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+              <div onClick="{{ setDeliveryHome }}" style="position:relative;cursor:pointer;border-radius:16px;padding:18px;background:{{ deliveryHomeBg }};color:{{ deliveryHomeColor }};">
+                <span style="position:absolute;top:14px;right:14px;background:{{ deliveryRecommendedBg }};color:{{ deliveryRecommendedColor }};font-size:10.5px;font-weight:800;padding:4px 10px;border-radius:999px;">Recommended</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="margin-bottom:10px;"><path d="M3 6h11v9H3z"/><path d="M14 10h4l3 3v2h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+                <div style="font-weight:700;font-size:14.5px;">Home delivery</div>
+                <div style="font-size:12.5px;opacity:0.75;margin-top:2px;">K25.00 &middot; same day in Lusaka</div>
+              </div>
+              <div onClick="{{ setDeliveryPickup }}" style="cursor:pointer;border-radius:16px;padding:18px;background:{{ deliveryPickupBg }};color:{{ deliveryPickupColor }};">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="margin-bottom:10px;"><path d="M4 9l1-5h14l1 5H4Z"/><path d="M5 9v9a1 1 0 0 0 1 1h3v-6h6v6h3a1 1 0 0 0 1-1V9H5Z"/></svg>
+                <div style="font-weight:700;font-size:14.5px;">Pickup from pharmacy</div>
+                <div style="font-size:12.5px;opacity:0.75;margin-top:2px;">Free &middot; ready in 2 hours</div>
+              </div>
+            </div>
+            <sc-if value="{{ isDeliveryHome }}" hint-placeholder-val="{{ true }}">
+              <textarea value="{{ address }}" onChange="{{ onAddressChange }}" placeholder="Delivery address, e.g. Plot 14, Kabulonga Road" style="width:100%;border:none;outline:none;background:#F4F7F6;border-radius:14px;padding:14px 16px;font-size:14.5px;color:#16323D;min-height:70px;resize:vertical;"></textarea>
+            </sc-if>
+            <sc-if value="{{ isDeliveryPickup }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <sc-for list="{{ pickupOptions }}" as="ph" hint-placeholder-count="3">
+                  <div onClick="{{ ph.select }}" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:{{ ph.bg }};border-radius:14px;padding:14px 18px;">
+                    <div>
+                      <div style="font-weight:700;font-size:14px;color:#16323D;">{{ ph.name }}</div>
+                      <div style="font-size:12.5px;color:rgba(22,50,61,0.5);">{{ ph.area }} &middot; {{ ph.distance }}</div>
+                    </div>
+                    <sc-if value="{{ ph.selected }}" hint-placeholder-val="{{ false }}">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="color:#076B54;"><path d="M5 13l4.5 4.5L19 8" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="background:#FFFFFF;border-radius:20px;box-shadow:0 2px 4px rgba(11,40,50,0.10), 0 8px 20px rgba(11,40,50,0.08);padding:28px;">
+            <div style="font-weight:700;font-size:16px;color:#16323D;margin-bottom:18px;">Payment</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;">
+              <div onClick="{{ setPaymentMtn }}" style="cursor:pointer;border-radius:16px;padding:18px;background:{{ paymentMtnBg }};color:{{ paymentMtnColor }};">
+                <div style="font-weight:700;font-size:14.5px;">MTN Mobile Money</div>
+                <div style="font-size:12.5px;opacity:0.75;margin-top:2px;">Pay from your MTN wallet</div>
+              </div>
+              <div onClick="{{ setPaymentAirtel }}" style="cursor:pointer;border-radius:16px;padding:18px;background:{{ paymentAirtelBg }};color:{{ paymentAirtelColor }};">
+                <div style="font-weight:700;font-size:14.5px;">Airtel Money</div>
+                <div style="font-size:12.5px;opacity:0.75;margin-top:2px;">Pay from your Airtel wallet</div>
+              </div>
+            </div>
+            <input value="{{ phoneNumber }}" onChange="{{ onPhoneChange }}" placeholder="Mobile money number, e.g. 097 123 4567" style="width:100%;border:none;outline:none;background:#F4F7F6;border-radius:14px;padding:14px 16px;font-size:14.5px;color:#16323D;margin-bottom:14px;"/>
+            <div style="font-size:12.5px;color:rgba(22,50,61,0.5);">Payments are processed securely via Lenco by BroadPay.</div>
+          </div>
+
+        </div>
+        <div style="background:#F4F7F6;border-radius:20px;padding:28px;position:{{ summaryPosition }};top:96px;">
+          <div style="font-weight:700;font-size:16px;color:#16323D;margin-bottom:20px;">Order summary</div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+            <sc-for list="{{ cartItems }}" as="it" hint-placeholder-count="3">
+              <div style="display:flex;justify-content:space-between;font-size:13.5px;color:rgba(22,50,61,0.7);"><span>{{ it.qty }} &times; {{ it.name }}</span><span>{{ it.lineTotalStr }}</span></div>
+            </sc-for>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;color:rgba(22,50,61,0.65);margin-bottom:12px;"><span>Subtotal</span><span>{{ subtotalStr }}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:14px;color:rgba(22,50,61,0.65);margin-bottom:20px;"><span>Delivery</span><span>{{ deliveryFeeStr }}</span></div>
+          <div style="display:flex;justify-content:space-between;font-weight:800;font-size:18px;color:#16323D;margin-bottom:24px;box-shadow:inset 0 1px 0 rgba(11,40,50,0.1);padding-top:16px;"><span>Total</span><span>{{ totalStr }}</span></div>
+          <button onClick="{{ placeOrder }}" style="background:#0C8F6E;color:#fff;border:none;border-radius:999px;padding:15px 0;font-weight:700;font-size:15px;cursor:pointer;width:100%;">Place order</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===================== CONFIRMATION ===================== -->
+  <sc-if value="{{ isConfirmation }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:560px;margin:0 auto;padding:96px {{ gutterPad }};text-align:center;">
+      <div style="width:64px;height:64px;border-radius:999px;background:#EAF6F1;color:#076B54;display:flex;align-items:center;justify-content:center;margin:0 auto 24px auto;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M5 13l4.5 4.5L19 8" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h1 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:28px;color:#16323D;margin:0 0 12px 0;">Order placed</h1>
+      <p style="font-size:15px;color:rgba(22,50,61,0.6);margin:0 0 8px 0;">Order {{ lastOrderId }} &middot; {{ lastOrderMethod }}</p>
+      <p style="font-size:15px;color:rgba(22,50,61,0.6);margin:0 0 32px 0;">We will notify you as soon as it is on the way.</p>
+      <div style="display:flex;gap:14px;justify-content:center;">
+        <button onClick="{{ navTracking }}" style="background:#0C8F6E;color:#fff;border:none;border-radius:999px;padding:14px 26px;font-weight:700;font-size:14.5px;cursor:pointer;">Track order</button>
+        <button onClick="{{ navBrowse }}" style="background:#EAF6F1;color:#076B54;border:none;border-radius:999px;padding:14px 26px;font-weight:700;font-size:14.5px;cursor:pointer;">Back to shop</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===================== TRACKING ===================== -->
+  <sc-if value="{{ isTracking }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:760px;margin:0 auto;padding:48px {{ gutterPad }} 96px {{ gutterPad }};">
+      <h1 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:32px;color:#16323D;margin:0 0 8px 0;">Track your order</h1>
+      <p style="font-size:14.5px;color:rgba(22,50,61,0.55);margin:0 0 36px 0;">Order {{ lastOrderId }} &middot; {{ lastOrderMethod }}</p>
+      <div style="display:flex;flex-direction:column;gap:0;margin-bottom:32px;">
+        <sc-for list="{{ trackingStages }}" as="st" hint-placeholder-count="4">
+          <div style="display:flex;gap:18px;">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:32px;height:32px;border-radius:999px;background:{{ st.dotBg }};color:{{ st.dotColor }};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <sc-if value="{{ st.done }}" hint-placeholder-val="{{ false }}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 13l4.5 4.5L19 8" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </sc-if>
+              </div>
+              <sc-if value="{{ st.showLine }}" hint-placeholder-val="{{ true }}">
+                <div style="width:2px;flex:1;min-height:36px;background:{{ st.lineColor }};"></div>
+              </sc-if>
+            </div>
+            <div style="padding-bottom:36px;">
+              <div style="font-weight:700;font-size:15px;color:{{ st.textColor }};margin-bottom:4px;">{{ st.label }}</div>
+              <div style="font-size:13px;color:rgba(22,50,61,0.5);">{{ st.sub }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <button onClick="{{ advanceTracking }}" style="background:#EAF6F1;color:#076B54;border:none;border-radius:999px;padding:13px 24px;font-weight:700;font-size:14px;cursor:pointer;">Simulate next update</button>
+    </div>
+  </sc-if>
+
+  <!-- ===================== ACCOUNT ===================== -->
+  <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:900px;margin:0 auto;padding:48px {{ gutterPad }} 96px {{ gutterPad }};">
+      <h1 style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:32px;color:#16323D;margin:0 0 28px 0;">Your account</h1>
+      <div style="background:#F4F7F6;border-radius:20px;padding:24px 28px;display:flex;align-items:center;gap:18px;margin-bottom:36px;">
+        <div style="width:52px;height:52px;border-radius:999px;background:#0B425D;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7v1H4v-1Z"/></svg>
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:16px;color:#16323D;">Mutale Banda</div>
+          <div style="font-size:13.5px;color:rgba(22,50,61,0.55);">097 712 3456 &middot; Kabulonga, Lusaka</div>
+        </div>
+      </div>
+      <div style="font-weight:700;font-size:18px;color:#16323D;margin-bottom:18px;">Order history</div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <sc-for list="{{ orderHistory }}" as="o" hint-placeholder-count="2">
+          <div style="background:#FFFFFF;border-radius:20px;box-shadow:0 2px 4px rgba(11,40,50,0.10), 0 8px 20px rgba(11,40,50,0.08);padding:22px 24px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+              <div>
+                <div style="font-weight:700;font-size:15px;color:#16323D;">Order {{ o.id }}</div>
+                <div style="font-size:12.5px;color:rgba(22,50,61,0.5);">{{ o.date }} &middot; {{ o.method }}</div>
+              </div>
+              <span style="font-size:12px;font-weight:800;padding:6px 14px;border-radius:999px;background:{{ o.statusBg }};color:{{ o.statusColor }};">{{ o.status }}</span>
+            </div>
+            <div style="font-size:13.5px;color:rgba(22,50,61,0.6);margin-bottom:16px;">{{ o.itemsSummary }}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-weight:800;font-size:15px;color:#076B54;">{{ o.total }}</span>
+              <button onClick="{{ o.reorder }}" style="background:#EAF6F1;color:#076B54;border:none;border-radius:999px;padding:10px 20px;font-weight:700;font-size:13px;cursor:pointer;">Reorder</button>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===================== CHAT ===================== -->
+  <sc-if value="{{ isChat }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:700px;margin:0 auto;padding:48px {{ gutterPad }} 96px {{ gutterPad }};">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
+        <image-slot id="pharmacist-photo" shape="circle" placeholder="Photo" style="width:52px;height:52px;flex-shrink:0;"></image-slot>
+        <div>
+          <div style="font-weight:700;font-size:16px;color:#16323D;">Chanda M., pharmacist</div>
+          <div style="font-size:12.5px;color:#076B54;font-weight:700;">Online now</div>
+        </div>
+      </div>
+      <div style="background:#F4F7F6;border-radius:20px;padding:24px;height:420px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;margin-bottom:16px;">
+        <sc-for list="{{ chatMessages }}" as="m" hint-placeholder-count="2">
+          <div style="display:flex;justify-content:{{ m.justify }};">
+            <div style="max-width:70%;background:{{ m.bg }};color:{{ m.color }};border-radius:16px;padding:12px 16px;font-size:14px;line-height:1.5;">{{ m.text }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <input value="{{ chatInput }}" onChange="{{ onChatInputChange }}" onKeyDown="{{ onChatKeyDown }}" placeholder="Type your message" style="flex:1;min-width:0;border:none;outline:none;background:#F4F7F6;border-radius:999px;padding:14px 20px;font-size:14.5px;color:#16323D;"/>
+        <button onClick="{{ sendChat }}" style="background:#0C8F6E;color:#fff;border:none;border-radius:999px;padding:14px 26px;font-weight:700;font-size:14.5px;cursor:pointer;">Send</button>
+      </div>
+    </div>
+  </sc-if>
+
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <div style="background:#0B425D;padding:56px 0 32px 0;">
+    <div style="max-width:1180px;margin:0 auto;padding:0 {{ gutterPad }};">
+      <div style="display:grid;grid-template-columns:{{ footerGridCols }};gap:40px;margin-bottom:36px;">
+        <div>
+          <div style="font-family:'Ubuntu',sans-serif;font-weight:700;font-size:19px;color:#fff;margin-bottom:12px;">Umuti Express</div>
+          <div style="font-size:13.5px;line-height:1.6;color:rgba(255,255,255,0.6);max-width:280px;">Online ordering for medicines, in partnership with pharmacies across Lusaka.</div>
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:13.5px;color:#fff;margin-bottom:14px;">Shop</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:rgba(255,255,255,0.6);">
+            <a onClick="{{ navBrowse }}" style="cursor:pointer;color:rgba(255,255,255,0.6);">All medicines</a>
+            <a onClick="{{ navPharmacies }}" style="cursor:pointer;color:rgba(255,255,255,0.6);">Nearby pharmacies</a>
+          </div>
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:13.5px;color:#fff;margin-bottom:14px;">Support</div>
+          <div style="display:flex;flex-direction:column;gap:10px;font-size:13.5px;color:rgba(255,255,255,0.6);">
+            <a onClick="{{ navChat }}" style="cursor:pointer;color:rgba(255,255,255,0.6);">Chat with a pharmacist</a>
+            <span>+260 97 000 0000</span>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:12.5px;color:rgba(255,255,255,0.4);box-shadow:inset 0 1px 0 rgba(255,255,255,0.12);padding-top:24px;">Umuti Express &middot; Lusaka, Zambia</div>
+    </div>
+  </div>
+
+</div>
+
+<helmet>
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</helmet>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const CATEGORIES = [
+  {id:'pain', name:'Pain relief'},
+  {id:'malaria', name:'Malaria treatment'},
+  {id:'chronic', name:'Chronic care'},
+  {id:'cold', name:'Cold & flu'},
+  {id:'vitamins', name:'Vitamins & supplements'},
+  {id:'baby', name:'Baby & mother care'},
+];
+
+const PRODUCTS = [
+  {id:1, name:'Panadol Extra', category:'pain', price:25, rx:false, blurb:'Paracetamol 500mg tablets for pain and fever, 20 tablets.'},
+  {id:2, name:'Diclofenac Gel', category:'pain', price:32, rx:false, blurb:'Topical gel for muscle and joint pain, 50g tube.'},
+  {id:3, name:'Coartem 20/120mg', category:'malaria', price:55, rx:false, blurb:'Artemether/lumefantrine, 24-tablet course for adults.'},
+  {id:4, name:'Duo-Cotecxin', category:'malaria', price:68, rx:true, blurb:'Dihydroartemisinin/piperaquine, prescription antimalarial course.'},
+  {id:5, name:'Metformin 500mg', category:'chronic', price:35, rx:true, blurb:'Blood sugar control tablets, 60-tablet pack.'},
+  {id:6, name:'Amlodipine 5mg', category:'chronic', price:38, rx:true, blurb:'Blood pressure tablets, 30-tablet pack.'},
+  {id:7, name:'Insulin Mixtard 30/70', category:'chronic', price:120, rx:true, blurb:'Injectable insulin, 10ml vial. Keep refrigerated after opening.'},
+  {id:8, name:'Piriton Tablets', category:'cold', price:20, rx:false, blurb:'Chlorphenamine for allergy and cold symptoms, 30 tablets.'},
+  {id:9, name:'Broncho Cough Syrup', category:'cold', price:27, rx:false, blurb:'Soothing syrup for dry and chesty cough, 100ml.'},
+  {id:10, name:'Vitamin C 1000mg', category:'vitamins', price:30, rx:false, blurb:'Immune support effervescent tablets, 20-tablet tube.'},
+  {id:11, name:'Multivitamin Syrup', category:'vitamins', price:33, rx:false, blurb:'Daily multivitamin syrup for adults, 200ml.'},
+  {id:12, name:'ORS + Zinc Sachets', category:'baby', price:22, rx:false, blurb:'Oral rehydration salts with zinc for children, pack of 10.'},
+  {id:13, name:'Baby Paracetamol Syrup', category:'baby', price:28, rx:false, blurb:'Infant fever and pain relief syrup, 100ml.'},
+];
+
+const PHARMACIES = [
+  {id:'p1', name:'Kabulonga Community Pharmacy', area:'Kabulonga', distance:'1.2 km', hours:'Open until 20:00', lat:-15.4180, lng:28.3300},
+  {id:'p2', name:'Cedar Health Pharmacy', area:'Woodlands', distance:'2.4 km', hours:'Open until 21:00', lat:-15.4300, lng:28.3210},
+  {id:'p3', name:'Riverside Pharmacy', area:'Rhodes Park', distance:'3.1 km', hours:'Open 24 hours', lat:-15.4090, lng:28.3200},
+  {id:'p4', name:'Northgate Pharmacy', area:'Chelstone', distance:'4.6 km', hours:'Open until 19:00', lat:-15.3850, lng:28.3800},
+  {id:'p5', name:'Manda Hill Pharmacy', area:'Manda Hill', distance:'5.0 km', hours:'Open until 20:00', lat:-15.3990, lng:28.3190},
+];
+
+const ORDERS_SEED = [
+  {id:'UM-10234', date:'Jul 29, 2026', items:[{id:5,qty:2},{id:6,qty:1}], total:113, status:'Delivered', method:'Home delivery'},
+  {id:'UM-10198', date:'Jun 21, 2026', items:[{id:1,qty:1},{id:12,qty:2}], total:69, status:'Delivered', method:'Pickup — Cedar Health Pharmacy'},
+];
+
+function fmtK(n) { return 'K' + n.toFixed(2); }
+function findProduct(id) { return PRODUCTS.find(p => p.id === id); }
+function catName(id) { const c = CATEGORIES.find(c => c.id === id); return c ? c.name : ''; }
+
+class Component extends DCLogic {
+  state = {
+    screen: 'home',
+    cart: [],
+    searchQuery: '',
+    categoryFilter: null,
+    selectedProductId: null,
+    detailQty: 1,
+    selectedPharmacyId: 'p1',
+    pendingRxProductId: null,
+    prescriptionStatus: 'none',
+    deliveryMethod: 'delivery',
+    paymentMethod: 'mtn',
+    phoneNumber: '',
+    address: '',
+    orders: ORDERS_SEED.slice(),
+    trackingStage: 1,
+    chatMessages: [{from:'pharmacist', text:"Hello, I'm Chanda, one of our pharmacists. How can I help you today?"}],
+    chatInput: '',
+    areaFilter: null,
+    toast: null,
+    isMobile: typeof window !== 'undefined' && window.innerWidth <= 860,
+    mobileMenuOpen: false,
+  };
+
+  componentDidMount() {
+    window.__umutiSelectPharmacy = (id) => this.selectPharmacy(id);
+    this.updateIsMobile();
+    window.addEventListener('resize', this.updateIsMobile);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.updateIsMobile);
+  }
+
+  updateIsMobile = () => {
+    const isMobile = window.innerWidth <= 860;
+    if (isMobile !== this.state.isMobile) this.setState({isMobile});
+  };
+
+  toggleMobileMenu = () => this.setState(s => ({mobileMenuOpen: !s.mobileMenuOpen}));
+
+  mapContainerRef = (el) => {
+    this.mapEl = el;
+    if (el) this.initMap();
+  };
+
+  initMap = () => {
+    if (!this.mapEl || this._map) return;
+    const ensure = () => {
+      if (!this.mapEl) return;
+      if (!window.L) { setTimeout(ensure, 100); return; }
+      const map = window.L.map(this.mapEl, {scrollWheelZoom: false}).setView([-15.410, 28.335], 12);
+      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors', maxZoom: 19,
+      }).addTo(map);
+      this._map = map;
+      this._markersLayer = window.L.layerGroup().addTo(map);
+      this.updateMarkers();
+    };
+    ensure();
+  };
+
+  updateMarkers = () => {
+    if (!this._map || !this._markersLayer || !window.L) return;
+    this._markersLayer.clearLayers();
+    const s = this.state;
+    PHARMACIES.filter(p => !s.areaFilter || p.area === s.areaFilter).forEach(p => {
+      const selected = s.selectedPharmacyId === p.id;
+      const color = selected ? '#0B425D' : '#0C8F6E';
+      const icon = window.L.divIcon({
+        className: '', iconSize: [30, 30], iconAnchor: [15, 30], popupAnchor: [0, -28],
+        html: '<svg width="30" height="30" viewBox="0 0 24 24" fill="' + color + '" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C7.6 2 4 5.5 4 9.8c0 6 8 12.2 8 12.2s8-6.2 8-12.2C20 5.5 16.4 2 12 2Zm0 11a3.2 3.2 0 1 1 0-6.4 3.2 3.2 0 0 1 0 6.4Z"/></svg>',
+      });
+      const marker = window.L.marker([p.lat, p.lng], {icon}).addTo(this._markersLayer);
+      marker.bindPopup(
+        '<div style="font-family:\'Open Sans\',sans-serif;min-width:180px;">' +
+        '<div style="font-weight:700;font-size:14px;color:#16323D;margin-bottom:4px;">' + p.name + '</div>' +
+        '<div style="font-size:12px;color:rgba(22,50,61,0.6);margin-bottom:2px;">' + p.area + ' &middot; ' + p.distance + '</div>' +
+        '<div style="font-size:12px;font-weight:700;color:#076B54;margin-bottom:10px;">' + p.hours + '</div>' +
+        '<button onclick="window.__umutiSelectPharmacy(\'' + p.id + '\')" style="background:#0C8F6E;color:#fff;border:none;border-radius:999px;padding:8px 14px;font-weight:700;font-size:12.5px;cursor:pointer;width:100%;">Select for pickup</button>' +
+        '</div>'
+      );
+    });
+  };
+
+  showToast(msg) {
+    this.setState({toast: msg});
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => this.setState({toast: null}), 1800);
+  }
+
+  goTo = (screen) => { this.setState({screen, mobileMenuOpen: false}); window.scrollTo(0, 0); };
+  goHome = () => this.goTo('home');
+  navBrowse = () => this.goTo('browse');
+  navPharmacies = () => this.goTo('pharmacies');
+  navTracking = () => this.goTo('tracking');
+  navChat = () => this.goTo('chat');
+  navAccount = () => this.goTo('account');
+  navCart = () => this.goTo('cart');
+  navCheckout = () => this.goTo('checkout');
+
+  onSearchChange = (e) => this.setState({searchQuery: e.target.value});
+  onSearchKeyDown = (e) => { if (e.key === 'Enter') this.navBrowse(); };
+
+  setCategoryFilter = (cat) => { this.setState({categoryFilter: cat}); this.navBrowse(); };
+  catPain = () => this.setCategoryFilter('pain');
+  catMalaria = () => this.setCategoryFilter('malaria');
+  catChronic = () => this.setCategoryFilter('chronic');
+  catCold = () => this.setCategoryFilter('cold');
+  catVitamins = () => this.setCategoryFilter('vitamins');
+  catBaby = () => this.setCategoryFilter('baby');
+
+  openProduct = (id) => { this.setState({selectedProductId: id, detailQty: 1}); this.goTo('product'); };
+
+  addToCart = (id, qty) => {
+    this.setState(s => {
+      const cart = s.cart.slice();
+      const existing = cart.find(c => c.id === id);
+      if (existing) existing.qty += qty; else cart.push({id, qty});
+      return {cart};
+    });
+    this.showToast('Added to cart');
+  };
+  incDetailQty = () => this.setState(s => ({detailQty: s.detailQty + 1}));
+  decDetailQty = () => this.setState(s => ({detailQty: Math.max(1, s.detailQty - 1)}));
+  addSelectedToCart = () => this.addToCart(this.state.selectedProductId, this.state.detailQty);
+
+  changeCartQty = (id, delta) => this.setState(s => ({
+    cart: s.cart.map(c => c.id === id ? {...c, qty: Math.max(1, c.qty + delta)} : c)
+  }));
+  removeFromCart = (id) => this.setState(s => ({cart: s.cart.filter(c => c.id !== id)}));
+
+  startRxFlow = () => this.setState({pendingRxProductId: this.state.selectedProductId, prescriptionStatus: 'none', screen: 'prescription'});
+  simulateUpload = () => {
+    if (this.state.prescriptionStatus !== 'none') return;
+    this.setState({prescriptionStatus: 'uploaded'});
+    setTimeout(() => this.setState({prescriptionStatus: 'reviewing'}), 1100);
+    setTimeout(() => this.setState({prescriptionStatus: 'approved'}), 3200);
+  };
+  continueAfterApproval = () => {
+    if (this.state.pendingRxProductId) this.addToCart(this.state.pendingRxProductId, 1);
+    this.setState({prescriptionStatus: 'none', pendingRxProductId: null});
+    this.goTo('cart');
+  };
+
+  setAreaFilter = (area) => this.setState(s => ({areaFilter: s.areaFilter === area ? null : area}));
+  selectPharmacy = (id) => { this.setState({selectedPharmacyId: id}); this.showToast('Pharmacy selected for pickup'); };
+
+  setDeliveryHome = () => this.setState({deliveryMethod: 'delivery'});
+  setDeliveryPickup = () => this.setState({deliveryMethod: 'pickup'});
+  onAddressChange = (e) => this.setState({address: e.target.value});
+  setPaymentMtn = () => this.setState({paymentMethod: 'mtn'});
+  setPaymentAirtel = () => this.setState({paymentMethod: 'airtel'});
+  onPhoneChange = (e) => this.setState({phoneNumber: e.target.value});
+
+  placeOrder = () => {
+    const s = this.state;
+    const pharmacy = PHARMACIES.find(p => p.id === s.selectedPharmacyId);
+    const total = s.cart.reduce((sum, c) => sum + findProduct(c.id).price * c.qty, 0) + (s.deliveryMethod === 'delivery' ? 25 : 0);
+    const method = s.deliveryMethod === 'delivery' ? 'Home delivery' : ('Pickup — ' + (pharmacy ? pharmacy.name : ''));
+    const newOrder = {
+      id: 'UM-' + Math.floor(10300 + Math.random() * 600),
+      date: 'Today',
+      items: s.cart.map(c => ({id: c.id, qty: c.qty})),
+      total, status: 'Preparing', method,
+    };
+    this.setState(s2 => ({orders: [newOrder, ...s2.orders], cart: [], trackingStage: 0}));
+    this.goTo('confirmation');
+  };
+
+  reorder = (order) => {
+    this.setState(s => {
+      const cart = s.cart.slice();
+      order.items.forEach(it => {
+        const existing = cart.find(c => c.id === it.id);
+        if (existing) existing.qty += it.qty; else cart.push({id: it.id, qty: it.qty});
+      });
+      return {cart};
+    });
+    this.navCart();
+  };
+
+  advanceTracking = () => this.setState(s => ({trackingStage: Math.min(s.trackingStage + 1, 3)}));
+
+  onChatInputChange = (e) => this.setState({chatInput: e.target.value});
+  onChatKeyDown = (e) => { if (e.key === 'Enter') this.sendChat(); };
+  sendChat = () => {
+    const text = this.state.chatInput.trim();
+    if (!text) return;
+    this.setState(s => ({chatMessages: [...s.chatMessages, {from: 'user', text}], chatInput: ''}));
+    setTimeout(() => {
+      const lower = text.toLowerCase();
+      let reply = "Thanks for the message. Let me check that for you.";
+      if (lower.includes('malaria')) reply = "For an adult with confirmed malaria, Coartem is usually taken as a 6-dose course over 3 days, with food. I can flag your order for review if needed.";
+      else if (lower.includes('prescription')) reply = "You can upload a photo of your prescription from the product page or the Prescriptions step. I will review it and confirm within a few hours.";
+      else if (lower.includes('deliver')) reply = "Home delivery within Lusaka usually arrives same day if ordered before 2pm, otherwise the next morning.";
+      this.setState(s2 => ({chatMessages: [...s2.chatMessages, {from: 'pharmacist', text: reply}]}));
+    }, 900);
+  };
+
+  renderVals() {
+    const s = this.state;
+    if (this._map) { try { this.updateMarkers(); } catch (e) {} }
+
+    const filteredProducts = PRODUCTS.filter(p => {
+      const matchesCategory = !s.categoryFilter || p.category === s.categoryFilter;
+      const matchesSearch = !s.searchQuery || p.name.toLowerCase().includes(s.searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    }).map(p => ({
+      id: p.id, name: p.name, rx: p.rx, priceStr: fmtK(p.price), categoryName: catName(p.category),
+      imgId: 'product-' + p.id, imgPlaceholder: 'Photo: ' + p.name,
+      open: () => this.openProduct(p.id), add: (e) => { e.stopPropagation(); this.addToCart(p.id, 1); },
+    }));
+
+    const featuredProducts = filteredProducts.length && (s.categoryFilter || s.searchQuery) ? filteredProducts.slice(0, 4)
+      : PRODUCTS.slice(0, 4).map(p => ({
+        id: p.id, name: p.name, rx: p.rx, priceStr: fmtK(p.price), categoryName: catName(p.category),
+        imgId: 'product-' + p.id, imgPlaceholder: 'Photo: ' + p.name,
+        open: () => this.openProduct(p.id), add: (e) => { e.stopPropagation(); this.addToCart(p.id, 1); },
+      }));
+
+    const categoryChips = [{id: null, name: 'All'}, ...CATEGORIES].map(c => ({
+      name: c.name, select: () => this.setState({categoryFilter: c.id}),
+      bg: s.categoryFilter === c.id ? '#0C8F6E' : '#F4F7F6',
+      color: s.categoryFilter === c.id ? '#fff' : '#16323D',
+    }));
+
+    const selectedProductRaw = findProduct(s.selectedProductId) || PRODUCTS[0];
+    const selectedProduct = selectedProductRaw ? {
+      id: selectedProductRaw.id, name: selectedProductRaw.name, rx: selectedProductRaw.rx,
+      priceStr: fmtK(selectedProductRaw.price), categoryName: catName(selectedProductRaw.category),
+      blurb: selectedProductRaw.blurb, imgId: 'product-' + selectedProductRaw.id,
+      imgPlaceholder: 'Photo: ' + selectedProductRaw.name,
+    } : null;
+
+    const nearbyForProduct = PHARMACIES.slice(0, 3);
+
+    const cartItems = s.cart.map(c => {
+      const p = findProduct(c.id);
+      return {
+        id: c.id, name: p.name, qty: c.qty, priceStr: fmtK(p.price), lineTotalStr: fmtK(p.price * c.qty),
+        imgId: 'product-' + p.id, imgPlaceholder: 'Photo: ' + p.name,
+        inc: () => this.changeCartQty(c.id, 1), dec: () => this.changeCartQty(c.id, -1),
+        remove: () => this.removeFromCart(c.id),
+      };
+    });
+    const subtotal = s.cart.reduce((sum, c) => sum + findProduct(c.id).price * c.qty, 0);
+    const deliveryFee = s.deliveryMethod === 'delivery' ? 25 : 0;
+
+    const areaChips = [{name: 'All areas', val: null}, ...PHARMACIES.map(p => ({name: p.area, val: p.area}))]
+      .filter((a, i, arr) => arr.findIndex(x => x.name === a.name) === i)
+      .map(a => ({
+        name: a.name, select: () => this.setAreaFilter(a.val),
+        bg: s.areaFilter === a.val ? '#0C8F6E' : '#F4F7F6',
+        color: s.areaFilter === a.val ? '#fff' : '#16323D',
+      }));
+
+    const pharmaciesList = PHARMACIES.filter(p => !s.areaFilter || p.area === s.areaFilter).map(p => ({
+      id: p.id, name: p.name, area: p.area, distance: p.distance, hours: p.hours,
+      imgId: 'pharm-' + p.id,
+      selected: s.selectedPharmacyId === p.id,
+      btnBg: s.selectedPharmacyId === p.id ? '#076B54' : '#EAF6F1',
+      btnColor: s.selectedPharmacyId === p.id ? '#fff' : '#076B54',
+      btnLabel: s.selectedPharmacyId === p.id ? 'Selected' : 'Select for pickup',
+      select: () => this.selectPharmacy(p.id),
+    }));
+
+    const pickupOptions = PHARMACIES.slice(0, 3).map(p => ({
+      name: p.name, area: p.area, distance: p.distance, selected: s.selectedPharmacyId === p.id,
+      bg: s.selectedPharmacyId === p.id ? '#EAF6F1' : '#F4F7F6',
+      select: () => this.selectPharmacy(p.id),
+    }));
+
+    const lastOrder = s.orders[0];
+    const stageDefs = s.deliveryMethod === 'delivery'
+      ? [['Order placed', 'We received your order'], ['Preparing your order', 'Pharmacy is packing your items'], ['Out for delivery', 'A rider is on the way'], ['Delivered', 'Order received']]
+      : [['Order placed', 'We received your order'], ['Preparing your order', 'Pharmacy is packing your items'], ['Ready for pickup', 'Head to the pharmacy counter'], ['Picked up', 'Order collected']];
+    const trackingStages = stageDefs.map((d, i) => ({
+      label: d[0], sub: d[1], done: i <= s.trackingStage, showLine: i < stageDefs.length - 1,
+      dotBg: i <= s.trackingStage ? '#0C8F6E' : '#F4F7F6', dotColor: '#fff',
+      lineColor: i < s.trackingStage ? '#0C8F6E' : '#F4F7F6',
+      textColor: i <= s.trackingStage ? '#16323D' : 'rgba(22,50,61,0.4)',
+    }));
+
+    const orderHistory = s.orders.map(o => ({
+      id: o.id, date: o.date, method: o.method, status: o.status, total: fmtK(o.total),
+      itemsSummary: o.items.map(it => it.qty + ' × ' + findProduct(it.id).name).join(', '),
+      statusBg: o.status === 'Delivered' ? '#EAF6F1' : '#FBEED9',
+      statusColor: o.status === 'Delivered' ? '#076B54' : '#8A5A0F',
+      reorder: () => this.reorder(o),
+    }));
+
+    const chatMessages = s.chatMessages.map(m => ({
+      text: m.text, justify: m.from === 'user' ? 'flex-end' : 'flex-start',
+      bg: m.from === 'user' ? '#0C8F6E' : '#fff', color: m.from === 'user' ? '#fff' : '#16323D',
+    }));
+
+    const navColor = (scr) => s.screen === scr ? '#076B54' : '#16323D';
+
+    return {
+      isHome: s.screen === 'home', isBrowse: s.screen === 'browse', isProduct: s.screen === 'product',
+      isPrescription: s.screen === 'prescription', isPharmacies: s.screen === 'pharmacies',
+      isCart: s.screen === 'cart', isCheckout: s.screen === 'checkout', isConfirmation: s.screen === 'confirmation',
+      isTracking: s.screen === 'tracking', isAccount: s.screen === 'account', isChat: s.screen === 'chat',
+      navColorBrowse: navColor('browse'), navColorPharmacies: navColor('pharmacies'),
+      navColorTracking: navColor('tracking'), navColorChat: navColor('chat'),
+      goHome: this.goHome, navBrowse: this.navBrowse, navPharmacies: this.navPharmacies,
+      navTracking: this.navTracking, navChat: this.navChat, navAccount: this.navAccount,
+      navCart: this.navCart, navCheckout: this.navCheckout,
+      cartCount: s.cart.reduce((sum, c) => sum + c.qty, 0),
+      toast: s.toast,
+      searchQuery: s.searchQuery, onSearchChange: this.onSearchChange, onSearchKeyDown: this.onSearchKeyDown,
+      catPain: this.catPain, catMalaria: this.catMalaria, catChronic: this.catChronic,
+      catCold: this.catCold, catVitamins: this.catVitamins, catBaby: this.catBaby,
+      featuredProducts, filteredProducts, noResults: filteredProducts.length === 0,
+      categoryChips,
+      selectedProduct, detailQty: s.detailQty, incDetailQty: this.incDetailQty, decDetailQty: this.decDetailQty,
+      showRxUpload: !!(selectedProduct && selectedProduct.rx && s.prescriptionStatus !== 'approved' && !s.cart.find(c => c.id === selectedProduct.id)),
+      showAddToCart: !!(selectedProduct && (!selectedProduct.rx || s.cart.find(c => c.id === selectedProduct.id) || s.prescriptionStatus === 'approved')),
+      startRxFlow: this.startRxFlow, addSelectedToCart: this.addSelectedToCart,
+      nearbyForProduct,
+      rxIsNone: s.prescriptionStatus === 'none', rxIsUploaded: s.prescriptionStatus === 'uploaded',
+      rxIsReviewing: s.prescriptionStatus === 'reviewing', rxIsApproved: s.prescriptionStatus === 'approved',
+      simulateUpload: this.simulateUpload, continueAfterApproval: this.continueAfterApproval,
+      areaChips, pharmaciesList, mapContainerRef: this.mapContainerRef,
+      gutterPad: s.isMobile ? '20px' : '40px',
+      heroPad: s.isMobile ? '40px 20px' : '64px 64px 64px 40px',
+      heroGridCols: s.isMobile ? '1fr' : '1fr 1fr',
+      heroMinHeight: s.isMobile ? 'auto' : '520px',
+      heroHeadingSize: s.isMobile ? '32px' : '46px',
+      heroTextMargin: s.isMobile ? '0 auto' : '0 0 0 auto',
+      categoriesGridCols: s.isMobile ? 'repeat(3,1fr)' : 'repeat(6,1fr)',
+      productsGridCols: s.isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)',
+      threeColGrid: s.isMobile ? '1fr' : 'repeat(3,1fr)',
+      twoColGrid: s.isMobile ? '1fr' : '1fr 1fr',
+      pharmCardGrid: s.isMobile ? '1fr' : 'repeat(2,1fr)',
+      sidebarGrid: s.isMobile ? '1fr' : '1.5fr 1fr',
+      footerGridCols: s.isMobile ? '1fr' : '1.6fr 1fr 1fr',
+      summaryPosition: s.isMobile ? 'static' : 'sticky',
+      navLinksDisplay: s.isMobile ? 'none' : 'flex',
+      accountDisplay: s.isMobile ? 'none' : 'flex',
+      hamburgerDisplay: s.isMobile ? 'flex' : 'none',
+      mobileMenuOpen: s.mobileMenuOpen,
+      toggleMobileMenu: this.toggleMobileMenu,
+      cartItems, cartEmpty: s.cart.length === 0, cartNotEmpty: s.cart.length > 0,
+      subtotalStr: fmtK(subtotal), deliveryFeeStr: fmtK(deliveryFee), totalStr: fmtK(subtotal + deliveryFee),
+      deliveryHomeBg: s.deliveryMethod === 'delivery' ? '#0C8F6E' : '#F4F7F6',
+      deliveryHomeColor: s.deliveryMethod === 'delivery' ? '#fff' : '#16323D',
+      deliveryRecommendedBg: s.deliveryMethod === 'delivery' ? '#076B54' : '#EAF6F1',
+      deliveryRecommendedColor: s.deliveryMethod === 'delivery' ? '#fff' : '#076B54',
+      deliveryPickupBg: s.deliveryMethod === 'pickup' ? '#0C8F6E' : '#F4F7F6',
+      deliveryPickupColor: s.deliveryMethod === 'pickup' ? '#fff' : '#16323D',
+      setDeliveryHome: this.setDeliveryHome, setDeliveryPickup: this.setDeliveryPickup,
+      isDeliveryHome: s.deliveryMethod === 'delivery', isDeliveryPickup: s.deliveryMethod === 'pickup',
+      address: s.address, onAddressChange: this.onAddressChange, pickupOptions,
+      paymentMtnBg: s.paymentMethod === 'mtn' ? '#0C8F6E' : '#F4F7F6', paymentMtnColor: s.paymentMethod === 'mtn' ? '#fff' : '#16323D',
+      paymentAirtelBg: s.paymentMethod === 'airtel' ? '#0C8F6E' : '#F4F7F6', paymentAirtelColor: s.paymentMethod === 'airtel' ? '#fff' : '#16323D',
+      setPaymentMtn: this.setPaymentMtn, setPaymentAirtel: this.setPaymentAirtel,
+      phoneNumber: s.phoneNumber, onPhoneChange: this.onPhoneChange,
+      placeOrder: this.placeOrder,
+      lastOrderId: lastOrder ? lastOrder.id : '', lastOrderMethod: lastOrder ? lastOrder.method : '',
+      trackingStages, advanceTracking: this.advanceTracking,
+      orderHistory,
+      chatMessages, chatInput: s.chatInput, onChatInputChange: this.onChatInputChange,
+      onChatKeyDown: this.onChatKeyDown, sendChat: this.sendChat,
+    };
+  }
+}
+</script>
+</body>
+</html>
