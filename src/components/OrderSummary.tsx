@@ -1,28 +1,42 @@
-"use client";
-
 import type { ReactNode } from "react";
-import { fmtK } from "@/lib/data";
-import { useStore } from "@/lib/store";
+import { fmtK } from "@/lib/format";
 
-export function OrderSummary({ children, lines, sticky = false }: { children: ReactNode; lines?: ReactNode; sticky?: boolean }) {
-  const { subtotal, deliveryFee } = useStore();
+export function OrderSummary({
+  subtotalNgwee,
+  deliveryNgwee,
+  lines,
+  children,
+  sticky = false,
+}: {
+  subtotalNgwee: number;
+  deliveryNgwee: number;
+  lines?: ReactNode;
+  children?: ReactNode;
+  sticky?: boolean;
+}) {
   return (
-    <div className={`panel summary ${sticky ? "summary-sticky" : ""}`}>
-      <div className="summary-title">Order summary</div>
-      {lines}
-      <div className="summary-line">
-        <span>Subtotal</span>
-        <span>{fmtK(subtotal)}</span>
+    <div className={`rounded-card bg-white p-6 shadow-card ${sticky ? "lg:sticky lg:top-[88px]" : ""}`}>
+      <h2 className="font-display text-[17px] font-bold">Order summary</h2>
+
+      {lines && <div className="mt-4 flex flex-col gap-2.5">{lines}</div>}
+
+      <dl className="mt-4 flex flex-col gap-2.5 border-t border-black/[0.08] pt-4 text-[14px]">
+        <div className="flex justify-between">
+          <dt className="text-ink-62">Subtotal</dt>
+          <dd className="font-semibold">{fmtK(subtotalNgwee)}</dd>
+        </div>
+        <div className="flex justify-between">
+          <dt className="text-ink-62">Delivery</dt>
+          <dd className="font-semibold">{deliveryNgwee === 0 ? "Free" : fmtK(deliveryNgwee)}</dd>
+        </div>
+      </dl>
+
+      <div className="mt-4 flex items-center justify-between border-t border-black/[0.08] pt-4">
+        <span className="font-display text-[15.5px] font-bold">Total</span>
+        <span className="font-display text-[20px] font-bold text-green-dark">{fmtK(subtotalNgwee + deliveryNgwee)}</span>
       </div>
-      <div className="summary-line">
-        <span>Delivery</span>
-        <span>{fmtK(deliveryFee)}</span>
-      </div>
-      <div className="summary-total">
-        <span>Total</span>
-        <span>{fmtK(subtotal + deliveryFee)}</span>
-      </div>
-      {children}
+
+      {children && <div className="mt-5">{children}</div>}
     </div>
   );
 }

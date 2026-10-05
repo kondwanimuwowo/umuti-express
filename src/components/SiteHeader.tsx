@@ -1,10 +1,9 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useStore } from "@/lib/store";
-import { BagIcon, LogoMark, MenuIcon, UserIcon } from "./icons";
+import { getProfile, isStaff } from "@/lib/auth";
+import { getCartCount } from "@/lib/queries";
+import { BagIcon, LogoMark, UserIcon } from "./icons";
+import { MobileNav } from "./MobileNav";
+import { NavLink } from "./NavLink";
 
 const LINKS = [
   { href: "/shop", label: "Shop" },
@@ -13,62 +12,57 @@ const LINKS = [
   { href: "/chat", label: "Chat with pharmacist" },
 ];
 
-export function SiteHeader() {
-  const pathname = usePathname();
-  const { cartCount, toast } = useStore();
-  const [open, setOpen] = useState(false);
+export async function SiteHeader() {
+  const profile = await getProfile();
+  const cartCount = profile ? await getCartCount(profile.id) : 0;
 
-  useEffect(() => setOpen(false), [pathname]);
-
-  const current = (href: string) => (pathname === href || pathname.startsWith(href + "/") ? "page" : undefined);
+  const links = isStaff(profile) ? [...LINKS, { href: "/pharmacist", label: "Review queue" }] : LINKS;
 
   return (
-    <>
-      <header className="nav">
-        <div className="container nav-bar">
-          <div className="nav-left">
-            <Link href="/" className="brand">
-              <span className="brand-mark">
-                <LogoMark />
+    <header className="sticky top-0 z-40 bg-white shadow-nav">
+      <div className="shell-container flex h-[68px] items-center justify-between gap-6">
+        <div className="flex min-w-0 items-center gap-8">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5 text-ink no-underline">
+            <span className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-green text-white">
+              <LogoMark />
+            </span>
+            <span className="font-display text-[17.5px] font-bold whitespace-nowrap">Umuti Express</span>
+          </Link>
+
+          <nav className="hidden items-center gap-6 lg:flex" aria-label="Main">
+            {links.map((l) => (
+              <NavLink key={l.href} href={l.href}>
+                {l.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href={profile ? "/account" : "/sign-in"}
+            className="hidden items-center gap-2 rounded-full px-3 py-2 text-[14px] font-semibold text-ink-70 no-underline hover:bg-surface hover:text-ink sm:flex"
+          >
+            <UserIcon />
+            <span>{profile ? "Account" : "Sign in"}</span>
+          </Link>
+
+          <Link
+            href="/cart"
+            className="relative flex items-center gap-2 rounded-full bg-green-tint px-4 py-2 text-[14px] font-semibold text-green-dark no-underline hover:bg-green hover:text-white"
+          >
+            <BagIcon />
+            <span className="hidden sm:inline">Cart</span>
+            {cartCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-green px-1.5 text-[11.5px] font-bold text-white">
+                {cartCount}
               </span>
-              <span className="brand-name">Umuti Express</span>
-            </Link>
-            <nav className="nav-links" aria-label="Main">
-              {LINKS.map((l) => (
-                <Link key={l.href} href={l.href} className="nav-link" aria-current={current(l.href)}>
-                  {l.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-          <div className="nav-right">
-            <Link href="/account" className="nav-account">
-              <UserIcon />
-              <span>Account</span>
-            </Link>
-            <Link href="/cart" className="nav-cart">
-              <BagIcon />
-              <span>Cart</span>
-              {cartCount > 0 && <span className="nav-cart-count">{cartCount}</span>}
-            </Link>
-            <button className="hamburger" onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open}>
-              <MenuIcon />
-            </button>
-          </div>
+            )}
+          </Link>
+
+          <MobileNav links={[...links, { href: profile ? "/account" : "/sign-in", label: profile ? "Account" : "Sign in" }]} />
         </div>
-        <nav className="container mobile-menu" data-open={open} aria-label="Mobile">
-          {[...LINKS, { href: "/account", label: "Account" }].map((l) => (
-            <Link key={l.href} href={l.href} aria-current={current(l.href)}>
-              {l.label}
-            </Link>
-          ))}
-        </nav>
-      </header>
-      {toast && (
-        <div className="toast" role="status">
-          {toast}
-        </div>
-      )}
-    </>
+      </div>
+    </header>
   );
 }

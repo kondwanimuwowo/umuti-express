@@ -3,8 +3,8 @@ import Link from "next/link";
 import { Open_Sans, Ubuntu } from "next/font/google";
 import "leaflet/dist/leaflet.css";
 import "./globals.css";
-import { StoreProvider } from "@/lib/store";
 import { SiteHeader } from "@/components/SiteHeader";
+import { ToastProvider } from "@/components/Toast";
 
 const ubuntu = Ubuntu({ subsets: ["latin"], weight: ["500", "700"], variable: "--font-ubuntu" });
 const openSans = Open_Sans({ subsets: ["latin"], weight: ["400", "600", "700", "800"], variable: "--font-open-sans" });
@@ -18,35 +18,47 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${ubuntu.variable} ${openSans.variable}`}>
       <body>
-        <StoreProvider>
-          <div className="shell">
+        <ToastProvider>
+          <div className="flex min-h-screen flex-col">
             <SiteHeader />
-            <main className="main">{children}</main>
-            <footer className="footer">
-              <div className="container">
-                <div className="footer-grid">
+            <main className="flex-1">{children}</main>
+
+            <footer className="mt-20 bg-navy py-12 text-white">
+              <div className="shell-container">
+                <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr]">
                   <div>
-                    <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 19, color: "#fff", marginBottom: 12 }}>Umuti Express</div>
-                    <div style={{ fontSize: 13.5, lineHeight: 1.6, color: "rgba(255,255,255,0.6)", maxWidth: 280 }}>
+                    <div className="mb-3 font-display text-[19px] font-bold">Umuti Express</div>
+                    <p className="max-w-[280px] text-[13.5px] leading-relaxed text-white/60">
                       Online ordering for medicines, in partnership with pharmacies across Lusaka.
-                    </div>
+                    </p>
                   </div>
-                  <div className="footer-col">
-                    <div className="footer-heading">Shop</div>
-                    <Link href="/shop">All medicines</Link>
-                    <Link href="/pharmacies">Nearby pharmacies</Link>
+
+                  <div className="flex flex-col gap-2.5">
+                    <div className="mb-1 text-[12px] font-bold tracking-wider text-white/50 uppercase">Shop</div>
+                    <Link href="/shop" className="text-[13.5px] text-white/80 no-underline hover:text-white">
+                      All medicines
+                    </Link>
+                    <Link href="/pharmacies" className="text-[13.5px] text-white/80 no-underline hover:text-white">
+                      Nearby pharmacies
+                    </Link>
                   </div>
-                  <div className="footer-col">
-                    <div className="footer-heading">Support</div>
-                    <Link href="/chat">Chat with a pharmacist</Link>
-                    <span>+260 97 000 0000</span>
+
+                  <div className="flex flex-col gap-2.5">
+                    <div className="mb-1 text-[12px] font-bold tracking-wider text-white/50 uppercase">Support</div>
+                    <Link href="/chat" className="text-[13.5px] text-white/80 no-underline hover:text-white">
+                      Chat with a pharmacist
+                    </Link>
+                    <span className="text-[13.5px] text-white/80">+260 97 000 0000</span>
                   </div>
                 </div>
-                <div className="footer-base">Umuti Express &middot; Lusaka, Zambia</div>
+
+                <div className="mt-10 border-t border-white/10 pt-6 text-[12.5px] text-white/50">
+                  Umuti Express &middot; Lusaka, Zambia
+                </div>
               </div>
             </footer>
           </div>
-        </StoreProvider>
+        </ToastProvider>
       </body>
     </html>
   );
