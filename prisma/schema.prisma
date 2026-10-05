@@ -1,0 +1,253 @@
+// Umuti Express data model.
+// Money is stored as integer ngwee (1 kwacha = 100 ngwee) to keep totals exact.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+// Connection URLs live in prisma.config.ts (Prisma 7); the client gets an
+// adapter instead, see src/lib/prisma.ts.
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  CUSTOMER
+  PHARMACIST
+  ADMIN
+}
+
+enum RxStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum OrderStatus {
+  AWAITING_PAYMENT
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+enum Fulfilment {
+  DELIVERY
+  PICKUP
+}
+
+enum PaymentMethod {
+  MTN
+  AIRTEL
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+/// Mirrors a Supabase `auth.users` row. `id` is the Supabase user UUID.
+model Profile {
+  id        String   @id @db.Uuid
+  email     String   @unique
+  fullName  String?
+  phone     String?
+  address   String?
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// Set when role is PHARMACIST: the branch this pharmacist reviews for.
+  pharmacyId String?
+  pharmacy   Pharmacy? @relation("StaffPharmacy", fields: [pharmacyId], references: [id], onDelete: SetNull)
+
+  /// A customer's usual pickup branch, used as the default at checkout.
+  preferredPharmacyId String?
+  preferredPharmacy   Pharmacy? @relation("PreferredPharmacy", fields: [preferredPharmacyId], references: [id], onDelete: SetNull)
+
+  cartItems        CartItem[]
+  orders           Order[]
+  prescriptions    Prescription[]
+  reviewedRx       Prescription[]  @relation("RxReviewer")
+  chatThreads      ChatThread[]
+  chatMessages     ChatMessage[]
+
+  @@index([role])
+}
+
+model Category {
+  slug     String    @id
+  name     String
+  sortOrder Int      @default(0)
+  products Product[]
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  name          String
+  blurb         String
+  /// Unit price in ngwee.
+  priceNgwee    Int
+  /// Requires a pharmacist-approved prescription before checkout.
+  rx            Boolean  @default(false)
+  inStock       Boolean  @default(true)
+  imageSrc      String?
+  imagePosition String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  categorySlug String
+  category     Category @relation(fields: [categorySlug], references: [slug], onDelete: Restrict)
+
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  prescriptions Prescription[]
+
+  @@index([categorySlug])
+  @@index([name])
+}
+
+model Pharmacy {
+  id       String  @id
+  name     String
+  area     String
+  hours    String
+  lat      Float
+  lng      Float
+  imageSrc String?
+
+  orders        Order[]
+  pharmacists   Profile[]      @relation("StaffPharmacy")
+  preferredBy   Profile[]      @relation("PreferredPharmacy")
+  prescriptions Prescription[]
+
+  @@index([area])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  qty       Int
+  createdAt DateTime @default(now())
+
+  profileId String  @db.Uuid
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, productId])
+  @@index([profileId])
+}
+
+/// A prescription photo uploaded for one Rx product, reviewed by a pharmacist.
+model Prescription {
+  id         String   @id @default(cuid())
+  imagePath  String
+  status     RxStatus @default(PENDING)
+  note       String?
+  createdAt  DateTime @default(now())
+  reviewedAt DateTime?
+
+  profileId String  @db.Uuid
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  reviewerId String?  @db.Uuid
+  reviewer   Profile? @relation("RxReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  pharmacyId String?
+  pharmacy   Pharmacy? @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
+
+  @@index([profileId, productId])
+  @@index([status])
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  /// Human-facing reference, e.g. UM-10234.
+  code          String        @unique
+  status        OrderStatus   @default(AWAITING_PAYMENT)
+  fulfilment    Fulfilment
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(PENDING)
+  /// Mobile money reference from the payment provider, when settled.
+  paymentRef    String?
+  phone         String
+  address       String?
+  subtotalNgwee Int
+  deliveryNgwee Int
+  totalNgwee    Int
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  profileId String  @db.Uuid
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  pharmacyId String?
+  pharmacy   Pharmacy? @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
+
+  items  OrderItem[]
+  events OrderEvent[]
+
+  @@index([profileId, createdAt])
+  @@index([status])
+}
+
+model OrderItem {
+  id   String @id @default(cuid())
+  qty  Int
+  /// Price captured at checkout, in ngwee, so later price changes don't rewrite history.
+  unitPriceNgwee Int
+  nameAtPurchase String
+
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+}
+
+model OrderEvent {
+  id        String      @id @default(cuid())
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+}
+
+model ChatThread {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  profileId String  @db.Uuid
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  messages ChatMessage[]
+
+  @@index([profileId])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  body      String
+  /// Role of the sender, so a thread renders correctly without loading each author.
+  authorRole Role
+  createdAt DateTime @default(now())
+
+  threadId String
+  thread   ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+  authorId String?  @db.Uuid
+  author   Profile? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([threadId, createdAt])
+}
