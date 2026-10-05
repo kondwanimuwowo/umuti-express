@@ -1,64 +1,93 @@
-"use client";
-
 import Link from "next/link";
-import { findProduct, fmtK } from "@/lib/data";
-import { useStore } from "@/lib/store";
+import { requireProfile } from "@/lib/auth";
+import { getCart } from "@/lib/queries";
+import { DELIVERY_FEE_NGWEE, fmtK } from "@/lib/format";
 import { ImageSlot } from "@/components/ImageSlot";
 import { OrderSummary } from "@/components/OrderSummary";
+import { CartRowControls } from "@/components/CartRowControls";
 
-export default function CartPage() {
-  const { cart, changeCartQty, removeFromCart } = useStore();
+export const metadata = { title: "Your cart | Umuti Express" };
 
-  return (
-    <div className="container page">
-      <h1 className="page-title">Your cart</h1>
-      {cart.length === 0 ? (
-        <div style={{ padding: "80px 0", textAlign: "center" }}>
-          <div style={{ fontSize: 16, color: "var(--ink-55)", marginBottom: 24 }}>Your cart is empty.</div>
-          <Link href="/shop" className="btn btn-primary" style={{ display: "inline-block" }}>
+export default async function CartPage() {
+  const profile = await requireProfile("/cart");
+  const cart = await getCart(profile.id);
+
+  if (cart.items.length === 0) {
+    return (
+      <div className="shell-container py-10">
+        <h1 className="font-display text-[28px] font-bold">Your cart</h1>
+        <div className="py-20 text-center">
+          <p className="mb-6 text-[16px] text-ink-55">Your cart is empty.</p>
+          <Link href="/shop" className="btn btn-primary">
             Browse medicines
           </Link>
         </div>
-      ) : (
-        <div className="grid-sidebar">
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {cart.map((c) => {
-              const p = findProduct(c.id);
-              if (!p) return null;
-              return (
-                <div key={c.id} className="card list-card">
-                  <ImageSlot id={`product-${p.id}`} placeholder={`Photo: ${p.name}`} style={{ width: 80, height: 80, borderRadius: 14, flexShrink: 0 }} />
-                  <div className="list-card-body">
-                    <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>{p.name}</div>
-                    <div style={{ fontSize: 13, color: "var(--ink-50)" }}>{fmtK(p.price)} each</div>
-                  </div>
-                  <div className="qty qty-sm">
-                    <button onClick={() => changeCartQty(c.id, -1)} aria-label="Decrease quantity">
-                      -
-                    </button>
-                    <span>{c.qty}</span>
-                    <button onClick={() => changeCartQty(c.id, 1)} aria-label="Increase quantity">
-                      +
-                    </button>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: 15, color: "var(--green-dark)", minWidth: 80, textAlign: "right" }}>{fmtK(p.price * c.qty)}</div>
-                  <button
-                    onClick={() => removeFromCart(c.id)}
-                    style={{ background: "transparent", border: "none", color: "var(--ink-40)", fontSize: 13, fontWeight: 700 }}
+      </div>
+    );
+  }
+
+  const blocked = cart.blockedItems.length > 0;
+
+  return (
+    <div className="shell-container py-10">
+      <h1 className="font-display text-[28px] font-bold">Your cart</h1>
+
+      <div className="mt-7 grid gap-8 lg:grid-cols-[1fr_360px]">
+        <div className="flex flex-col gap-4">
+          {cart.items.map((item) => (
+            <div
+              key={item.id}
+              className="flex flex-wrap items-center gap-4 rounded-card bg-white p-4 shadow-card sm:flex-nowrap"
+            >
+              <ImageSlot
+                src={item.product.imageSrc}
+                position={item.product.imagePosition}
+                placeholder={`Photo: ${item.product.name}`}
+                className="h-20 w-20 shrink-0 rounded-inner"
+              />
+
+              <div className="min-w-0 flex-1">
+                <Link href={`/product/${item.productId}`} className="text-[15px] font-bold text-ink no-underline hover:underline">
+                  {item.product.name}
+                </Link>
+                <div className="mt-1 text-[13px] text-ink-50">{fmtK(item.product.priceNgwee)} each</div>
+                {item.product.rx && !cart.approvedIds.has(item.productId) && (
+                  <Link
+                    href={`/prescription/${item.productId}`}
+                    className="mt-2 inline-block rounded-full bg-amber-tint px-2.5 py-1 text-[11.5px] font-bold text-amber no-underline"
                   >
-                    Remove
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-          <OrderSummary>
-            <Link href="/checkout" className="btn btn-primary btn-lg btn-block" style={{ display: "block", textAlign: "center", padding: "15px 0" }}>
+                    Awaiting pharmacist approval
+                  </Link>
+                )}
+              </div>
+
+              <CartRowControls productId={item.productId} qty={item.qty} />
+
+              <div className="min-w-20 text-right font-display text-[15px] font-bold text-green-dark">
+                {fmtK(item.product.priceNgwee * item.qty)}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <OrderSummary subtotalNgwee={cart.subtotalNgwee} deliveryNgwee={DELIVERY_FEE_NGWEE} sticky>
+          {blocked ? (
+            <>
+              <button type="button" className="btn btn-primary btn-lg w-full" disabled>
+                Go to checkout
+              </button>
+              <p className="mt-3 text-[13px] leading-relaxed text-amber">
+                A pharmacist still needs to approve:{" "}
+                {cart.blockedItems.map((i) => i.product.name).join(", ")}.
+              </p>
+            </>
+          ) : (
+            <Link href="/checkout" className="btn btn-primary btn-lg w-full">
               Go to checkout
             </Link>
-          </OrderSummary>
-        </div>
-      )}
+          )}
+        </OrderSummary>
+      </div>
     </div>
   );
 }
