@@ -34,13 +34,9 @@ const CATEGORIES = [
   { slug: "baby", name: "Baby & mother care", sortOrder: 6 },
 ];
 
+// Only products whose photo actually shows that product; the rest use the placeholder frame.
 const PHOTOS: Record<number, { src: string; position: string }> = {
   1: { src: "/images/product-1.webp", position: "50% 13%" },
-  2: { src: "/images/product-2.webp", position: "50% 17%" },
-  3: { src: "/images/product-3.webp", position: "50% 37%" },
-  4: { src: "/images/product-4.webp", position: "50% 28%" },
-  5: { src: "/images/product-5.webp", position: "50% 30%" },
-  6: { src: "/images/product-6.webp", position: "50% 50%" },
 };
 
 const PRODUCTS = [

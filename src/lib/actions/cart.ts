@@ -15,6 +15,14 @@ export async function addToCart(input: { productId: number; qty: number }) {
   if (!product) return { ok: false as const, error: "That product is no longer listed." };
   if (!product.inStock) return { ok: false as const, error: "That product is out of stock." };
 
+  if (product.rx) {
+    const approved = await prisma.prescription.findFirst({
+      where: { profileId: profile.id, productId, status: "APPROVED" },
+      select: { id: true },
+    });
+    if (!approved) return { ok: false as const, error: "This medicine needs an approved prescription first." };
+  }
+
   await prisma.cartItem.upsert({
     where: { profileId_productId: { profileId: profile.id, productId } },
     create: { profileId: profile.id, productId, qty },

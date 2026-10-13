@@ -46,12 +46,8 @@ using (
 );
 ```
 
-The seed prints two logins, both with password `umuti-demo-1234`:
-
-| Email | Role |
-| --- | --- |
-| `customer@umuti.test` | Customer |
-| `pharmacist@umuti.test` | Pharmacist, Cedar Health branch |
+If `SUPABASE_SERVICE_ROLE_KEY` is set, the seed also creates a demo customer and a demo pharmacist
+and prints their logins in the terminal. Use it on a local or throwaway project only.
 
 ## Structure
 

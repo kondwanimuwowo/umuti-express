@@ -1,4 +1,4 @@
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 
 // The Prisma CLI reads .env, but Next.js keeps local values in .env.local.
 // Loaded in this order so .env.local wins.
@@ -14,11 +14,13 @@ for (const file of [".env", ".env.local"]) {
  * Prisma 7 keeps connection URLs here rather than in schema.prisma.
  * Migrations and introspection use DIRECT_URL (port 5432); the app itself
  * connects through the pooled DATABASE_URL via the adapter in src/lib/prisma.ts.
+ * Read with process.env, not env(): `prisma generate` runs at install time on Vercel,
+ * where DIRECT_URL is not needed and env() would throw when it is unset.
  */
 export default defineConfig({
   schema: "prisma/schema.prisma",
   datasource: {
-    url: env("DIRECT_URL"),
+    url: process.env.DIRECT_URL,
   },
   migrations: {
     seed: "tsx prisma/seed.ts",
