@@ -2,14 +2,16 @@
 // Money is stored as integer ngwee (1 kwacha = 100 ngwee) to keep totals exact.
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client-js"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 // Connection URLs live in prisma.config.ts (Prisma 7); the client gets an
 // adapter instead, see src/lib/prisma.ts.
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [pg_trgm]
 }
 
 enum Role {
@@ -49,6 +51,78 @@ enum PaymentStatus {
   FAILED
 }
 
+/// ZAMRA's registered category for a medicine. Only admin may loosen it.
+enum ProductClassification {
+  GENERAL
+  PHARMACY_ONLY
+  PRESCRIPTION
+}
+
+/// A pharmacy-added product stays PENDING (visible only to its creator) until admin approves it.
+enum CatalogueStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PharmacyStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum DocumentType {
+  PHARMACY_REGISTRATION
+  BUSINESS_LICENCE
+  LICENCE
+  PRACTISING_CERTIFICATE
+}
+
+enum LedgerKind {
+  SALE_EARNING
+  CONSULT_EARNING
+  REFUND
+  PAYOUT
+  PAYOUT_FEE
+  ADJUSTMENT
+}
+
+enum FeeBearer {
+  PLATFORM
+  PAYEE
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+enum ConsultationStatus {
+  AWAITING_PAYMENT
+  PAID
+  ACTIVE
+  COMPLETED
+  REFUNDED
+  CANCELLED
+}
+
+enum LegalDocType {
+  TERMS
+  PRIVACY
+  MEDICAL
+  PARTNER
+  CONSULT
+}
+
 /// Mirrors a Supabase `auth.users` row. `id` is the Supabase user UUID.
 model Profile {
   id        String   @id @db.Uuid
@@ -68,63 +142,119 @@ model Profile {
   preferredPharmacyId String?
   preferredPharmacy   Pharmacy? @relation("PreferredPharmacy", fields: [preferredPharmacyId], references: [id], onDelete: SetNull)
 
-  cartItems        CartItem[]
-  orders           Order[]
-  prescriptions    Prescription[]
-  reviewedRx       Prescription[]  @relation("RxReviewer")
-  chatThreads      ChatThread[]
-  chatMessages     ChatMessage[]
+  /// The pharmacy's owner can invite staff to it.
+  isPharmacyOwner Boolean @default(false)
+
+  cartItems     CartItem[]
+  orders        Order[]
+  prescriptions Prescription[]
+  reviewedRx    Prescription[] @relation("RxReviewer")
+  chatThreads   ChatThread[]
+  chatMessages  ChatMessage[]
+
+  pharmacistProfile PharmacistProfile?
+  consultations     Consultation[]
+  legalAcceptances  LegalAcceptance[]
+  accessLogs        AccessLog[]
+  reviewedDocuments VerificationDocument[] @relation("DocumentReviewer")
 
   @@index([role])
 }
 
 model Category {
-  slug     String    @id
-  name     String
-  sortOrder Int      @default(0)
-  products Product[]
+  slug      String    @id
+  name      String
+  sortOrder Int       @default(0)
+  products  Product[]
 }
 
+/// A medicine in the shared catalogue. Price and stock belong to each pharmacy's
+/// PharmacyProduct listing.
 model Product {
-  id            Int      @id @default(autoincrement())
-  name          String
-  blurb         String
-  /// Unit price in ngwee.
-  priceNgwee    Int
-  /// Requires a pharmacist-approved prescription before checkout.
-  rx            Boolean  @default(false)
-  inStock       Boolean  @default(true)
-  imageSrc      String?
-  imagePosition String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             Int                   @id @default(autoincrement())
+  name           String
+  blurb          String
+  /// Active ingredient, so "paracetamol" finds Panadol and the other way round.
+  genericName    String?
+  /// Other brand or common names that should match a search.
+  aliases        String[]              @default([])
+  strength       String?
+  form           String?
+  packSize       String?
+  classification ProductClassification @default(GENERAL)
+  status         CatalogueStatus       @default(APPROVED)
+  /// Legacy until phase 2 (price) and phase 4 (rx): the app still reads these.
+  /// Price now lives on PharmacyProduct; rx is superseded by classification.
+  priceNgwee     Int
+  rx             Boolean               @default(false)
+  inStock        Boolean               @default(true)
+  imageSrc       String?
+  imagePosition  String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
 
   categorySlug String
   category     Category @relation(fields: [categorySlug], references: [slug], onDelete: Restrict)
 
-  cartItems     CartItem[]
-  orderItems    OrderItem[]
-  prescriptions Prescription[]
+  createdByPharmacyId String?
+  createdByPharmacy   Pharmacy? @relation("CreatedProducts", fields: [createdByPharmacyId], references: [id], onDelete: SetNull)
+
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+  prescriptions    Prescription[]
+  pharmacyProducts PharmacyProduct[]
 
   @@index([categorySlug])
-  @@index([name])
+  @@index([name(ops: raw("gin_trgm_ops"))], type: Gin, map: "Product_name_trgm_idx")
+  @@index([genericName(ops: raw("gin_trgm_ops"))], type: Gin, map: "Product_genericName_trgm_idx")
+}
+
+/// One pharmacy's listing of a catalogue product, with its own price and stock.
+model PharmacyProduct {
+  id         String   @id @default(cuid())
+  /// Unit price in ngwee.
+  priceNgwee Int
+  stock      Int      @default(0)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  pharmacyId String
+  pharmacy   Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  productId  Int
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([pharmacyId, productId])
+  @@index([productId])
 }
 
 model Pharmacy {
-  id       String  @id
-  name     String
-  area     String
-  hours    String
-  lat      Float
-  lng      Float
-  imageSrc String?
+  id             String         @id
+  name           String
+  area           String
+  hours          String
+  lat            Float
+  lng            Float
+  imageSrc       String?
+  status         PharmacyStatus @default(PENDING)
+  /// Delivery is arranged between pharmacy and buyer and paid on arrival; this is what the buyer sees.
+  offersDelivery Boolean        @default(false)
+  deliveryNote   String?
+  createdAt      DateTime       @default(now())
 
-  orders        Order[]
-  pharmacists   Profile[]      @relation("StaffPharmacy")
-  preferredBy   Profile[]      @relation("PreferredPharmacy")
-  prescriptions Prescription[]
+  orders           Order[]
+  pharmacists      Profile[]              @relation("StaffPharmacy")
+  preferredBy      Profile[]              @relation("PreferredPharmacy")
+  prescriptions    Prescription[]
+  listings         PharmacyProduct[]
+  createdProducts  Product[]              @relation("CreatedProducts")
+  documents        VerificationDocument[]
+  ledgerEntries    LedgerEntry[]
+  payouts          Payout[]
+  legalAcceptances LegalAcceptance[]
 
   @@index([area])
+  @@index([status])
 }
 
 model CartItem {
@@ -143,11 +273,11 @@ model CartItem {
 
 /// A prescription photo uploaded for one Rx product, reviewed by a pharmacist.
 model Prescription {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   imagePath  String
-  status     RxStatus @default(PENDING)
+  status     RxStatus  @default(PENDING)
   note       String?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
   reviewedAt DateTime?
 
   profileId String  @db.Uuid
@@ -166,22 +296,29 @@ model Prescription {
 }
 
 model Order {
-  id            String        @id @default(cuid())
+  id                 String        @id @default(cuid())
   /// Human-facing reference, e.g. UM-10234.
-  code          String        @unique
-  status        OrderStatus   @default(AWAITING_PAYMENT)
-  fulfilment    Fulfilment
-  paymentMethod PaymentMethod
-  paymentStatus PaymentStatus @default(PENDING)
+  code               String        @unique
+  status             OrderStatus   @default(AWAITING_PAYMENT)
+  fulfilment         Fulfilment
+  paymentMethod      PaymentMethod
+  paymentStatus      PaymentStatus @default(PENDING)
   /// Mobile money reference from the payment provider, when settled.
-  paymentRef    String?
-  phone         String
-  address       String?
-  subtotalNgwee Int
-  deliveryNgwee Int
-  totalNgwee    Int
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  paymentRef         String?
+  phone              String
+  address            String?
+  subtotalNgwee      Int
+  /// Legacy: delivery is paid on arrival, outside our payment. Dropped in phase 2.
+  deliveryNgwee      Int
+  totalNgwee         Int
+  /// Money split, saved at sale time so later setting changes never rewrite history.
+  /// Null until live payments (phase 7).
+  commissionBps      Int?
+  commissionNgwee    Int?
+  gatewayFeeNgwee    Int?
+  pharmacyShareNgwee Int?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
   profileId String  @db.Uuid
   profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
@@ -189,16 +326,17 @@ model Order {
   pharmacyId String?
   pharmacy   Pharmacy? @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
 
-  items  OrderItem[]
-  events OrderEvent[]
+  items         OrderItem[]
+  events        OrderEvent[]
+  ledgerEntries LedgerEntry[]
 
   @@index([profileId, createdAt])
   @@index([status])
 }
 
 model OrderItem {
-  id   String @id @default(cuid())
-  qty  Int
+  id             String @id @default(cuid())
+  qty            Int
   /// Price captured at checkout, in ngwee, so later price changes don't rewrite history.
   unitPriceNgwee Int
   nameAtPurchase String
@@ -237,11 +375,11 @@ model ChatThread {
 }
 
 model ChatMessage {
-  id        String   @id @default(cuid())
-  body      String
+  id         String   @id @default(cuid())
+  body       String
   /// Role of the sender, so a thread renders correctly without loading each author.
   authorRole Role
-  createdAt DateTime @default(now())
+  createdAt  DateTime @default(now())
 
   threadId String
   thread   ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
@@ -250,4 +388,183 @@ model ChatMessage {
   author   Profile? @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   @@index([threadId, createdAt])
+}
+
+/// Admin-editable values, stored as text: commissionBps, freePayoutsPerMonth, minPayoutNgwee.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+/// Every money movement for a payee, never edited. A balance is the sum of its entries.
+/// The payee is a pharmacy or a pharmacist (exactly one is set; checked in code).
+model LedgerEntry {
+  id          String     @id @default(cuid())
+  kind        LedgerKind
+  /// Signed: earnings are positive, payouts and fees negative.
+  amountNgwee Int
+  note        String?
+  createdAt   DateTime   @default(now())
+
+  pharmacyId          String?
+  pharmacy            Pharmacy?          @relation(fields: [pharmacyId], references: [id], onDelete: Restrict)
+  pharmacistProfileId String?
+  pharmacistProfile   PharmacistProfile? @relation(fields: [pharmacistProfileId], references: [id], onDelete: Restrict)
+
+  orderId        String?
+  order          Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  consultationId String?
+  consultation   Consultation? @relation(fields: [consultationId], references: [id], onDelete: SetNull)
+  payoutId       String?
+  payout         Payout?       @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+
+  @@index([pharmacyId, createdAt])
+  @@index([pharmacistProfileId, createdAt])
+}
+
+model Payout {
+  id             String       @id @default(cuid())
+  /// Released from the payee's balance. If the payee bears the fee, they receive this minus feeNgwee.
+  amountNgwee    Int
+  /// Lenco's transfer fee.
+  feeNgwee       Int
+  feeBorneBy     FeeBearer
+  /// The one free payout per calendar month.
+  isFreeMonthly  Boolean      @default(false)
+  status         PayoutStatus @default(PENDING)
+  lencoReference String?
+  createdAt      DateTime     @default(now())
+  paidAt         DateTime?
+
+  pharmacyId          String?
+  pharmacy            Pharmacy?          @relation(fields: [pharmacyId], references: [id], onDelete: Restrict)
+  pharmacistProfileId String?
+  pharmacistProfile   PharmacistProfile? @relation(fields: [pharmacistProfileId], references: [id], onDelete: Restrict)
+
+  ledgerEntries LedgerEntry[]
+
+  @@index([pharmacyId, createdAt])
+  @@index([pharmacistProfileId, createdAt])
+}
+
+/// A pharmacist who offers paid consultations. Verified by admin before they can take any.
+model PharmacistProfile {
+  id                 String             @id @default(cuid())
+  /// Registration number with the professional body.
+  registrationNumber String?
+  status             VerificationStatus @default(PENDING)
+  /// Price per consultation, in ngwee.
+  rateNgwee          Int?
+  bio                String?
+  createdAt          DateTime           @default(now())
+  verifiedAt         DateTime?
+
+  profileId String  @unique @db.Uuid
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  documents     VerificationDocument[]
+  consultations Consultation[]
+  ledgerEntries LedgerEntry[]
+  payouts       Payout[]
+
+  @@index([status])
+}
+
+/// A licence or certificate kept in a private bucket, for a pharmacy or a pharmacist.
+/// Past its expiry date the owner is suspended (phase 8).
+model VerificationDocument {
+  id         String             @id @default(cuid())
+  type       DocumentType
+  /// Path inside the private storage bucket.
+  filePath   String
+  expiresOn  DateTime?
+  status     VerificationStatus @default(PENDING)
+  note       String?
+  createdAt  DateTime           @default(now())
+  reviewedAt DateTime?
+
+  pharmacyId          String?
+  pharmacy            Pharmacy?          @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  pharmacistProfileId String?
+  pharmacistProfile   PharmacistProfile? @relation(fields: [pharmacistProfileId], references: [id], onDelete: Cascade)
+
+  reviewerId String?  @db.Uuid
+  reviewer   Profile? @relation("DocumentReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([pharmacyId])
+  @@index([pharmacistProfileId])
+  @@index([expiresOn])
+}
+
+model Consultation {
+  id                   String             @id @default(cuid())
+  status               ConsultationStatus @default(AWAITING_PAYMENT)
+  priceNgwee           Int
+  /// Money split saved when the consultation is paid, as on Order.
+  commissionBps        Int?
+  commissionNgwee      Int?
+  gatewayFeeNgwee      Int?
+  pharmacistShareNgwee Int?
+  paymentRef           String?
+  createdAt            DateTime           @default(now())
+  paidAt               DateTime?
+  completedAt          DateTime?
+
+  customerId          String            @db.Uuid
+  customer            Profile           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  pharmacistProfileId String
+  pharmacistProfile   PharmacistProfile @relation(fields: [pharmacistProfileId], references: [id], onDelete: Restrict)
+
+  ledgerEntries LedgerEntry[]
+
+  @@index([customerId, createdAt])
+  @@index([pharmacistProfileId, status])
+}
+
+/// A published version of a legal text. Text is drafted by a lawyer; we only store and version it.
+model LegalDocument {
+  id          String       @id @default(cuid())
+  type        LegalDocType
+  version     String
+  title       String
+  /// Markdown.
+  body        String
+  publishedAt DateTime     @default(now())
+
+  acceptances LegalAcceptance[]
+
+  @@unique([type, version])
+}
+
+/// Who accepted which version, and when. For a pharmacy agreement the owner accepts on its behalf.
+model LegalAcceptance {
+  id         String   @id @default(cuid())
+  acceptedAt DateTime @default(now())
+  ip         String?
+
+  documentId String
+  document   LegalDocument @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  profileId  String        @db.Uuid
+  profile    Profile       @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  pharmacyId String?
+  pharmacy   Pharmacy?     @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
+
+  @@unique([documentId, profileId])
+}
+
+/// Who viewed which prescription or customer record, and when.
+model AccessLog {
+  id          String   @id @default(cuid())
+  /// e.g. "prescription.view".
+  action      String
+  subjectType String
+  subjectId   String
+  createdAt   DateTime @default(now())
+
+  actorId String?  @db.Uuid
+  actor   Profile? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([subjectType, subjectId])
+  @@index([actorId, createdAt])
 }

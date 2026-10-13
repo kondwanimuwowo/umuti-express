@@ -49,12 +49,17 @@ Nothing is pushed without asking.
 
 ### Phase 1: Schema foundation
 - Add models: `PharmacyProduct`, `LedgerEntry`, `Payout`, `Setting`, `PharmacistProfile`,
-  `PharmacistDocument`, `Consultation`, `LegalDocument`, `LegalAcceptance`, `AccessLog`.
+  `VerificationDocument` (licences for pharmacies and pharmacists), `Consultation`, `LegalDocument`,
+  `LegalAcceptance`, `AccessLog`.
 - `Product` gains `genericName`, `aliases[]`, `strength`, `form`, `packSize`, `classification`,
-  `status`, `createdByPharmacyId`; price and stock move to `PharmacyProduct`.
-- `Order` gains `pharmacyId`, `fulfilment`, commission and gateway-fee snapshots; delivery fee removed.
-- Enable `pg_trgm`; add trigram indexes on name, generic name and aliases.
-- Migration: create a pilot pharmacy and carry the existing catalogue, prices and stock over to it.
+  `status`, `createdByPharmacyId`. `Pharmacy` gains `status`, `offersDelivery`, `deliveryNote`;
+  `Profile` gains `isPharmacyOwner`.
+- `Order` gains commission and gateway-fee snapshots (null until Phase 7).
+- Legacy columns stay so the app keeps working: `Product.priceNgwee` and `inStock` (dropped in
+  Phase 2 when the app reads `PharmacyProduct`), `Product.rx` (replaced by `classification` in
+  Phase 4), `Order.deliveryNgwee` (dropped in Phase 2).
+- Enable `pg_trgm`; add trigram indexes on name and generic name. Aliases are searched in Phase 2.
+- Migration: carry the existing catalogue, prices and stock over to a pilot pharmacy (Cedar Health).
 - Seed settings (`commissionBps=1000`, `freePayoutsPerMonth=1`, `minPayoutNgwee=5000`) and generic
   names and aliases for the seeded products.
 - Done when: `db:push`/migrate and seed run clean, the app still builds, and existing pages still render.
@@ -76,8 +81,14 @@ Nothing is pushed without asking.
   Balance, Settings.
 - Scope every staff query to the staff member's pharmacy (orders, prescriptions, chats).
 - Orders page: list, filter, advance status (closes the existing gap where staff cannot advance orders).
-- Owner invites staff; admin approves a new pharmacy before it appears publicly.
-- Done when: a pharmacist at one pharmacy cannot see or change another pharmacy's data (verified by trying).
+- Pharmacy onboarding: an application form (name, area, map location, hours, contact, delivery
+  terms), an owner account, and upload of the pharmacy's registration and business licence to a
+  private bucket. The pharmacy starts as `PENDING`, admin reviews the documents and activates it.
+  Which documents are mandatory is for the lawyer to confirm. Pharmacies do not go public until
+  Phase 6 adds the partner agreement they must accept.
+- Owner invites staff.
+- Done when: a pharmacist at one pharmacy cannot see or change another pharmacy's data (verified by
+  trying), and a new pharmacy stays hidden until admin activates it.
 - Commit: `feat(dashboard): pharmacy dashboard with branch scoping and order management`
 
 ### Phase 4: Inventory and catalogue management
