@@ -12,7 +12,8 @@ export function ReviewCard({
   productName,
   patientName,
   patientPhone,
-  imagePath,
+  orderCode,
+  isPdf,
   uploadedAt,
 }: {
   id: string;
@@ -20,7 +21,8 @@ export function ReviewCard({
   productName: string;
   patientName: string;
   patientPhone: string | null;
-  imagePath: string;
+  orderCode: string;
+  isPdf: boolean;
   uploadedAt: string;
 }) {
   const [note, setNote] = useState("");
@@ -29,11 +31,9 @@ export function ReviewCard({
   const toast = useToast();
   const router = useRouter();
 
-  const isPdf = imagePath.toLowerCase().endsWith(".pdf");
-
   const loadScan = () =>
     startTransition(async () => {
-      const signed = await getPrescriptionUrl(imagePath);
+      const signed = await getPrescriptionUrl(id);
       if (signed) setUrl(signed);
       else toast("Could not open that scan.", "error");
     });
@@ -63,7 +63,9 @@ export function ReviewCard({
             {patientName}
             {patientPhone && ` · ${patientPhone}`}
           </div>
-          <div className="text-[12.5px] text-ink-50">Uploaded {uploadedAt}</div>
+          <div className="text-[12.5px] text-ink-50">
+            Order {orderCode} &middot; uploaded {uploadedAt}
+          </div>
         </div>
 
         <span className="shrink-0 rounded-full bg-amber-tint px-3 py-1.5 text-[12px] font-bold text-amber">

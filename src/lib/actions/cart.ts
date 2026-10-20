@@ -35,14 +35,6 @@ export async function addToCart(input: {
   }
   if (listing.stock < 1) return { ok: false, error: "That product is out of stock at this pharmacy." };
 
-  if (listing.product.classification === "PRESCRIPTION") {
-    const approved = await prisma.prescription.findFirst({
-      where: { profileId: profile.id, productId, status: "APPROVED" },
-      select: { id: true },
-    });
-    if (!approved) return { ok: false, error: "This medicine needs an approved prescription first." };
-  }
-
   // One pharmacy per cart: each order is fulfilled, and paid out, by a single pharmacy.
   const held = await prisma.cartItem.findFirst({
     where: { profileId: profile.id, pharmacyId: { not: pharmacyId } },
@@ -138,7 +130,7 @@ export async function reorder(input: { orderCode: string }): Promise<CartResult>
       active: true,
       stock: { gt: 0 },
       pharmacy: { status: "ACTIVE" },
-      product: { status: "APPROVED", classification: { not: "PRESCRIPTION" } },
+      product: { status: "APPROVED" },
     },
   });
   const byProduct = new Map(listings.map((l) => [l.productId, l]));

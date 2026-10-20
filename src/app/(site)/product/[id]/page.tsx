@@ -1,9 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProduct, getRelatedProducts, getSameIngredient } from "@/lib/queries";
-import { getProfile } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { fmtK, RX_STATUS_LABEL } from "@/lib/format";
+import { fmtK } from "@/lib/format";
 import { ImageSlot } from "@/components/ImageSlot";
 import { ProductCard } from "@/components/ProductCard";
 import { AddToCartButton } from "@/components/AddToCartButton";
@@ -21,22 +19,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   const product = await getProduct(id);
   if (!product) notFound();
 
-  const [sameIngredient, related, profile] = await Promise.all([
+  const [sameIngredient, related] = await Promise.all([
     getSameIngredient(product.genericName, product.id),
     getRelatedProducts(product.categorySlug, product.id),
-    getProfile(),
   ]);
 
-  // Latest prescription for this product, to show where the request stands.
   const needsRx = product.classification === "PRESCRIPTION";
-  const rx =
-    needsRx && profile
-      ? await prisma.prescription.findFirst({
-          where: { profileId: profile.id, productId: product.id },
-          orderBy: { createdAt: "desc" },
-        })
-      : null;
-  const rxApproved = rx?.status === "APPROVED";
 
   const listings = product.pharmacyProducts;
   const inStock = listings.filter((l) => l.stock > 0);
@@ -85,10 +73,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           {needsRx && (
             <div className="mt-4 rounded-inner bg-amber-tint px-4 py-3 text-[13.5px] leading-relaxed text-amber">
               <strong className="font-bold">Prescription required.</strong>{" "}
-              {rx
-                ? RX_STATUS_LABEL[rx.status]
-                : "Upload your prescription and a licensed pharmacist will review it before you can order."}
-              {rx?.note && <div className="mt-1.5 text-amber/90">Pharmacist note: {rx.note}</div>}
+              Add it to your cart and upload your prescription at checkout. The pharmacy checks it before you pay.
             </div>
           )}
 
@@ -121,8 +106,6 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                       <AddToCartButton
                         productId={product.id}
                         pharmacyId={l.pharmacyId}
-                        rx={needsRx}
-                        rxApproved={rxApproved}
                         inStock={l.stock > 0}
                         compact
                       />

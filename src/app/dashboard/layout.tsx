@@ -24,18 +24,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
       { href: "/dashboard/products", label: "Products", icon: "products" },
       { href: "/dashboard/prescriptions", label: "Prescriptions", icon: "prescriptions", count: counts?.prescriptions },
       { href: "/dashboard/chats", label: "Chats", icon: "chats", count: counts?.chats },
+      { href: "/dashboard/verification", label: "Verification", icon: "verification" },
     ];
     sections.push({ title: "Pharmacy", links });
   }
   if (isAdmin) {
-    const [pendingPharmacies, pendingProducts] = await Promise.all([
+    const [pendingPharmacies, pendingProducts, pendingPharmacists] = await Promise.all([
       prisma.pharmacy.count({ where: { status: "PENDING" } }),
       prisma.product.count({ where: { status: "PENDING" } }),
+      prisma.pharmacistProfile.count({ where: { status: "PENDING" } }),
     ]);
     sections.push({
       title: "Platform",
       links: [
         { href: "/dashboard/admin/catalogue", label: "Catalogue", icon: "catalogue", count: pendingProducts },
+        { href: "/dashboard/admin/pharmacists", label: "Pharmacists", icon: "pharmacists", count: pendingPharmacists },
         { href: "/dashboard/admin", label: "Pharmacies", icon: "pharmacies", count: pendingPharmacies },
       ],
     });

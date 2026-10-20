@@ -14,12 +14,14 @@ export function CheckoutForm({
   items,
   subtotalNgwee,
   pharmacy,
+  needsPrescription,
   defaultPhone,
   defaultAddress,
 }: {
   items: Item[];
   subtotalNgwee: number;
   pharmacy: PharmacyInfo;
+  needsPrescription: boolean;
   defaultPhone: string;
   defaultAddress: string;
 }) {
@@ -27,19 +29,49 @@ export function CheckoutForm({
   const [paymentMethod, setPaymentMethod] = useState<"MTN" | "AIRTEL">("MTN");
   const [phone, setPhone] = useState(defaultPhone);
   const [address, setAddress] = useState(defaultAddress);
+  const [consent, setConsent] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
   const [pending, startTransition] = useTransition();
   const toast = useToast();
 
   const submit = () =>
     startTransition(async () => {
+      const data = new FormData();
+      data.set("fulfilment", fulfilment);
+      data.set("paymentMethod", paymentMethod);
+      data.set("phone", phone);
+      data.set("address", address);
+      if (consent) data.set("consent", "on");
+      if (file) data.set("prescription", file);
+
       // On success this redirects, so only a failure returns here.
-      const res = await placeOrder({ fulfilment, paymentMethod, phone, address });
+      const res = await placeOrder(data);
       if (res && !res.ok) toast(res.error, "error");
     });
+
+  const ready = consent && (!needsPrescription || file !== null);
 
   return (
     <div className="mt-7 grid gap-8 lg:grid-cols-[1fr_360px]">
       <div className="flex flex-col gap-7">
+        {needsPrescription && (
+          <section className="rounded-card bg-white p-7 shadow-card">
+            <h2 className="font-display text-[16px] font-bold">Your prescription</h2>
+            <p className="mt-1 mb-5 text-[13.5px] text-ink-55">
+              Some items in your cart need a prescription. {pharmacy.name} checks it first, and you pay only after it is
+              approved.
+            </p>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
+              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              aria-label="Prescription photo or PDF"
+              className="block w-full rounded-inner bg-surface px-4 py-3 text-[14px] text-ink file:mr-4 file:rounded-full file:border-0 file:bg-green-tint file:px-4 file:py-2 file:text-[13px] file:font-bold file:text-green-dark"
+            />
+            <p className="mt-2 text-[12.5px] text-ink-50">A clear photo or PDF, up to 8MB. Only the pharmacy handling this order can open it.</p>
+          </section>
+        )}
+
         <section className="rounded-card bg-white p-7 shadow-card">
           <h2 className="font-display text-[16px] font-bold">Pickup or delivery</h2>
           <p className="mt-1 mb-5 text-[13.5px] text-ink-55">
@@ -102,8 +134,26 @@ export function CheckoutForm({
             aria-label="Mobile money number"
             className="mt-5 w-full rounded-inner bg-surface px-4 py-3 text-[14.5px] text-ink outline-none placeholder:text-ink-40 focus:ring-2 focus:ring-green"
           />
-          <p className="mt-3 text-[12.5px] text-ink-50">Payments are processed securely via Lenco by BroadPay.</p>
+          <p className="mt-3 text-[12.5px] text-ink-50">
+            {needsPrescription
+              ? "You will not be charged now. We ask for payment once the pharmacy approves your prescription."
+              : "Payments are processed securely via Lenco by BroadPay."}
+          </p>
         </section>
+
+        <label className="flex items-start gap-3 rounded-card bg-white p-5 text-[13.5px] leading-relaxed text-ink-70 shadow-card">
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+            className="mt-1 h-4 w-4 shrink-0 accent-[var(--color-green)]"
+          />
+          <span>
+            I agree that Umuti Express shares my name, phone number
+            {fulfilment === "DELIVERY" && ", delivery address"}
+            {needsPrescription && " and prescription"} with {pharmacy.name}, only to fulfil this order.
+          </span>
+        </label>
       </div>
 
       <OrderSummary
@@ -119,8 +169,8 @@ export function CheckoutForm({
           </div>
         ))}
       >
-        <button type="button" className="btn btn-primary btn-lg w-full" disabled={pending} onClick={submit}>
-          {pending ? "Processing payment…" : "Place order"}
+        <button type="button" className="btn btn-primary btn-lg w-full" disabled={pending || !ready} onClick={submit}>
+          {pending ? "Processing…" : needsPrescription ? "Send for review" : "Place order"}
         </button>
       </OrderSummary>
     </div>

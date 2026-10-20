@@ -19,6 +19,7 @@ export default async function ConfirmationPage({
   const order = await getOrder(profile.id, code);
   if (!order) notFound();
 
+  const inReview = order.status === "AWAITING_REVIEW";
   const method =
     order.fulfilment === "DELIVERY" ? "Home delivery" : `Pickup at ${order.pharmacy?.name ?? "pharmacy"}`;
 
@@ -28,16 +29,25 @@ export default async function ConfirmationPage({
         <CheckIcon size={28} />
       </div>
 
-      <h1 className="font-display text-[28px] font-bold">Order placed</h1>
+      <h1 className="font-display text-[28px] font-bold">{inReview ? "Sent for review" : "Order placed"}</h1>
       <p className="mt-3 text-[15px] text-ink-62">
         Order {order.code} &middot; {method}
       </p>
-      <p className="mt-1 text-[15px] text-ink-62">
-        {fmtK(order.totalNgwee)} paid by {order.paymentMethod === "MTN" ? "MTN Mobile Money" : "Airtel Money"}
-      </p>
-      <p className="mt-6 text-[15px] leading-relaxed text-ink-62">
-        We will notify you on {order.phone} as soon as it is on the way.
-      </p>
+      {inReview ? (
+        <p className="mt-6 text-[15px] leading-relaxed text-ink-62">
+          {order.pharmacy?.name ?? "The pharmacy"} is checking your prescription. You have not been charged. Once it is
+          approved, pay {fmtK(order.totalNgwee)} from the tracking page and the pharmacy starts preparing your order.
+        </p>
+      ) : (
+        <>
+          <p className="mt-1 text-[15px] text-ink-62">
+            {fmtK(order.totalNgwee)} paid by {order.paymentMethod === "MTN" ? "MTN Mobile Money" : "Airtel Money"}
+          </p>
+          <p className="mt-6 text-[15px] leading-relaxed text-ink-62">
+            We will notify you on {order.phone} as soon as it is on the way.
+          </p>
+        </>
+      )}
 
       <ul className="mt-8 flex flex-col gap-2 text-left">
         {order.items.map((item) => (

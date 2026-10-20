@@ -23,9 +23,8 @@ npm run dev                     # http://localhost:3000
 
 ### Prescription storage
 
-Create a **private** Storage bucket named `prescriptions`, then add these policies, or uploads will
-be rejected. Each patient writes only into a folder named after their own user id, and only staff
-can read:
+Create a **private** Storage bucket named `prescriptions`, then add this one policy, or uploads will
+be rejected. Each patient writes only into a folder named after their own user id:
 
 ```sql
 create policy "patients upload their own prescriptions"
@@ -34,16 +33,16 @@ with check (
   bucket_id = 'prescriptions'
   and (storage.foldername(name))[1] = auth.uid()::text
 );
+```
 
-create policy "staff read prescriptions"
-on storage.objects for select to authenticated
-using (
-  bucket_id = 'prescriptions'
-  and exists (
-    select 1 from "Profile" p
-    where p.id = auth.uid() and p.role in ('PHARMACIST', 'ADMIN')
-  )
-);
+There is deliberately **no read policy**. The app opens a prescription with a one-minute link signed
+by the server (using `SUPABASE_SERVICE_ROLE_KEY`) after checking that the file belongs to an order
+placed with the pharmacist's own pharmacy, and writes every view to `AccessLog`. If you created the
+earlier `staff read prescriptions` policy, drop it, or any pharmacist could read every prescription
+straight from the Storage API:
+
+```sql
+drop policy if exists "staff read prescriptions" on storage.objects;
 ```
 
 ### Pharmacy document storage
@@ -105,15 +104,21 @@ and prints their logins in the terminal. Use it on a local or throwaway project 
 - **Pharmacy owner** applies at `/partner/apply` with registration documents. The pharmacy stays
   hidden and the owner has no staff access until an admin activates it. Owners edit the pharmacy's
   details and invite staff with single-use links from `/dashboard/settings`.
+- **Verified pharmacist** is staff whose licence and practising certificate an admin has checked
+  (`/dashboard/verification`, reviewed at `/dashboard/admin/pharmacists`). Only they can open or
+  decide prescriptions, and the check lapses on the certificate's expiry date.
 - **Pharmacist (staff)** joins through an invite link and manages their own pharmacy's orders,
   products, prescriptions and chats. Staff add products from the shared catalogue or submit new ones,
   which stay hidden from customers until an admin approves them and sets the classification. Every dashboard query and action is scoped to that pharmacy.
 - **Admin** reviews applications, sets each pharmacy's map location and activates or suspends it.
 
-A customer uploads a prescription; only a pharmacist at a pharmacy that lists the medicine can
-approve it. An Rx product cannot be added to the cart or checked out until an approved prescription
-exists for it, and that rule is enforced in the server action rather than the UI. Order stages are
-advanced by the pharmacy that holds the order, not the customer.
+A cart with a prescription item is checked out with the prescription attached. The order is placed
+without a charge and goes to the pharmacy holding it; a verified pharmacist there approves or
+refuses it. Approval opens payment, one refusal cancels the order and returns the stock. A pharmacy
+with no order cannot open a prescription. Delivery orders have a printable rider label
+(`/dashboard/orders/<code>/label`) holding the order code, first name, phone and address, and
+nothing about the medicines. Order stages are advanced by the pharmacy that holds the order, not
+the customer.
 
 ## Not wired up yet
 

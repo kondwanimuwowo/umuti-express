@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/staff";
 import { getReviewQueue } from "@/lib/queries";
+import { VERIFICATION_COPY, getVerificationState } from "@/lib/verification";
 import { RX_STATUS_LABEL, fmtDate, fmtTime } from "@/lib/format";
 import { ReviewCard } from "./ReviewCard";
 
@@ -8,7 +9,8 @@ export const metadata = { title: "Prescription review | Umuti Express" };
 
 export default async function PrescriptionsPage() {
   const { profile: staff, pharmacy } = await requireStaff("/dashboard/prescriptions");
-  const queue = await getReviewQueue(pharmacy.id);
+  const [queue, verification] = await Promise.all([getReviewQueue(pharmacy.id), getVerificationState(staff.id)]);
+  const verified = verification.state === "VERIFIED";
 
   const pending = queue.filter((rx) => rx.status === "PENDING");
   const decided = queue.filter((rx) => rx.status !== "PENDING");
@@ -17,15 +19,29 @@ export default async function PrescriptionsPage() {
     <div className="max-w-[860px]">
       <h1 className="font-display text-[28px] font-bold">Prescription review</h1>
       <p className="mt-2.5 text-[14.5px] text-ink-62">
-        Signed in as {staff.fullName ?? staff.email}. Only a pharmacist can approve a prescription item for ordering. You see requests for medicines your pharmacy lists, and the ones you have decided.
+        Prescriptions uploaded for orders placed with {pharmacy.name}. A customer pays only after one is approved, and one refusal cancels the order.
       </p>
+
+      {!verified && (
+        <div className="mt-7 rounded-card bg-amber-tint px-5 py-4 text-[14px] leading-relaxed text-amber">
+          <strong className="font-bold">{VERIFICATION_COPY[verification.state].label}.</strong>{" "}
+          {VERIFICATION_COPY[verification.state].detail} Only a verified pharmacist can open or decide prescriptions.{" "}
+          <Link href="/dashboard/verification" className="font-bold underline">
+            Go to verification
+          </Link>
+        </div>
+      )}
 
       <section className="mt-9">
         <h2 className="mb-4 text-[18px] font-bold">
           Awaiting review{pending.length > 0 && <span className="ml-2 text-ink-50">({pending.length})</span>}
         </h2>
 
-        {pending.length === 0 ? (
+        {!verified ? (
+          <p className="rounded-card bg-white p-8 text-center text-[15px] text-ink-55 shadow-card">
+            {pending.length > 0 ? `${pending.length} waiting for a verified pharmacist.` : "Nothing waiting."}
+          </p>
+        ) : pending.length === 0 ? (
           <p className="rounded-card bg-white p-8 text-center text-[15px] text-ink-55 shadow-card">
             Nothing waiting. New uploads appear here.
           </p>
@@ -39,7 +55,8 @@ export default async function PrescriptionsPage() {
                 productId={rx.productId}
                 patientName={rx.profile.fullName ?? rx.profile.email}
                 patientPhone={rx.profile.phone}
-                imagePath={rx.imagePath}
+                orderCode={rx.order?.code ?? ""}
+                isPdf={rx.imagePath.toLowerCase().endsWith(".pdf")}
                 uploadedAt={`${fmtDate(rx.createdAt)} at ${fmtTime(rx.createdAt)}`}
               />
             ))}
@@ -64,7 +81,7 @@ export default async function PrescriptionsPage() {
                     {rx.product.name}
                   </Link>
                   <div className="text-[12.5px] text-ink-50">
-                    {rx.profile.fullName ?? rx.profile.email} &middot;{" "}
+                    {rx.order?.code} &middot; {rx.profile.fullName ?? rx.profile.email} &middot;{" "}
                     {rx.reviewedAt ? fmtDate(rx.reviewedAt) : fmtDate(rx.createdAt)}
                     {rx.reviewer?.fullName && ` · by ${rx.reviewer.fullName}`}
                   </div>

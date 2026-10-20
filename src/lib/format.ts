@@ -19,6 +19,7 @@ export function fmtTime(d: Date): string {
 }
 
 export const ORDER_STATUS_LABEL: Record<string, string> = {
+  AWAITING_REVIEW: "Prescription review",
   AWAITING_PAYMENT: "Awaiting payment",
   PREPARING: "Preparing",
   READY: "Ready for pickup",

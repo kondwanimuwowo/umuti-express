@@ -1,23 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { useAddToCart } from "./useAddToCart";
 
 export function AddToCartButton({
   productId,
   pharmacyId,
-  rx,
   inStock,
-  rxApproved = false,
   qty = 1,
   compact = false,
   large = false,
 }: {
   productId: number;
   pharmacyId: string;
-  rx: boolean;
   inStock: boolean;
-  rxApproved?: boolean;
   qty?: number;
   compact?: boolean;
   large?: boolean;
@@ -31,15 +26,6 @@ export function AddToCartButton({
       <button type="button" className={`btn btn-secondary ${size}`} disabled>
         Out of stock
       </button>
-    );
-  }
-
-  // An Rx item needs a pharmacist-approved prescription first; route there instead.
-  if (rx && !rxApproved) {
-    return (
-      <Link href={`/prescription/${productId}`} className={`btn btn-secondary ${size}`}>
-        {compact ? "Upload Rx" : "Upload prescription"}
-      </Link>
     );
   }
 

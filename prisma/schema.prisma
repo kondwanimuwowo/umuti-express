@@ -27,6 +27,8 @@ enum RxStatus {
 }
 
 enum OrderStatus {
+  /// A prescription item is waiting for the pharmacy to check the prescription. Nothing is charged yet.
+  AWAITING_REVIEW
   AWAITING_PAYMENT
   PREPARING
   READY
@@ -299,6 +301,11 @@ model Prescription {
   pharmacyId String?
   pharmacy   Pharmacy? @relation(fields: [pharmacyId], references: [id], onDelete: SetNull)
 
+  /// The order this prescription was uploaded for. Only that order's pharmacy can open it.
+  orderId String?
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
   @@index([profileId, productId])
   @@index([status])
 }
@@ -323,6 +330,8 @@ model Order {
   commissionNgwee    Int?
   gatewayFeeNgwee    Int?
   pharmacyShareNgwee Int?
+  /// When the customer agreed to share their details with the pharmacy.
+  sharingConsentAt   DateTime?
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
@@ -335,6 +344,7 @@ model Order {
   items         OrderItem[]
   events        OrderEvent[]
   ledgerEntries LedgerEntry[]
+  prescriptions Prescription[]
 
   @@index([profileId, createdAt])
   @@index([status])

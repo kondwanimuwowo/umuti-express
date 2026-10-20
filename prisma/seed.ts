@@ -112,6 +112,22 @@ async function seedAuthUsers() {
       create: { id, email: u.email, fullName: u.fullName, phone: u.phone, role: u.role, pharmacyId: u.pharmacyId, isPharmacyOwner: u.isPharmacyOwner },
       update: { role: u.role, pharmacyId: u.pharmacyId, isPharmacyOwner: u.isPharmacyOwner, fullName: u.fullName, phone: u.phone },
     });
+    // The demo pharmacist is pre-verified so prescription review can be tried straight away.
+    if (u.role === "PHARMACIST") {
+      const expiresOn = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+      const record = await prisma.pharmacistProfile.upsert({
+        where: { profileId: id },
+        create: { profileId: id, registrationNumber: "DEMO-0001", status: "VERIFIED", verifiedAt: new Date() },
+        update: { status: "VERIFIED", verifiedAt: new Date() },
+      });
+      await prisma.verificationDocument.deleteMany({ where: { pharmacistProfileId: record.id, filePath: { startsWith: "demo/" } } });
+      await prisma.verificationDocument.createMany({
+        data: [
+          { pharmacistProfileId: record.id, type: "LICENCE" as const, filePath: "demo/licence.pdf", status: "VERIFIED" as const },
+          { pharmacistProfileId: record.id, type: "PRACTISING_CERTIFICATE" as const, filePath: "demo/certificate.pdf", expiresOn, status: "VERIFIED" as const },
+        ],
+      });
+    }
     console.log(`  ${u.role.toLowerCase()}: ${u.email} / ${u.password}`);
   }
 }

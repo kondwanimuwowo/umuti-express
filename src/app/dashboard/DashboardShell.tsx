@@ -7,7 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { signOut } from "@/lib/actions/account";
 import { LogoMark, MenuIcon } from "@/components/icons";
 
-export type NavIcon = "orders" | "products" | "prescriptions" | "chats" | "settings" | "catalogue" | "pharmacies";
+export type NavIcon = "orders" | "products" | "prescriptions" | "chats" | "settings" | "catalogue" | "pharmacies" | "verification" | "pharmacists";
 export type NavItem = { href: string; label: string; icon: NavIcon; count?: number };
 export type NavSection = { title?: string; links: NavItem[] };
 
@@ -59,6 +59,18 @@ const ICON_PATHS: Record<NavIcon, React.ReactNode> = {
     <>
       <path d="M3 10 5 4h14l2 6" />
       <path d="M4 10v10h16V10M9 20v-6h6v6" />
+    </>
+  ),
+  verification: (
+    <>
+      <path d="M12 3 4 6v6c0 4.5 3.2 8 8 9 4.8-1 8-4.5 8-9V6z" />
+      <path d="m9 12 2 2 4-4" />
+    </>
+  ),
+  pharmacists: (
+    <>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 11l2 2 3-3" />
     </>
   ),
 };
@@ -223,15 +235,15 @@ export function DashboardShell({ sections, settingsHref, pharmacyName, roleLabel
   const currentItem = all.find((l) => l.href === currentHref(all, pathname));
 
   return (
-    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[256px_1fr]">
-      <aside className="hidden bg-navy lg:block">
+    <div className="min-h-screen bg-surface lg:grid lg:grid-cols-[256px_1fr] print:block print:bg-white">
+      <aside className="hidden bg-navy lg:block print:hidden">
         <div className="sticky top-0 h-screen">
           <SidebarBody sections={sections} roleLabel={roleLabel} user={user} settingsHref={settingsHref} />
         </div>
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 bg-white px-5 shadow-nav lg:h-16 lg:px-10">
+        <header className="sticky top-0 z-30 flex h-14 print:hidden items-center justify-between gap-4 bg-white px-5 shadow-nav lg:h-16 lg:px-10">
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -252,7 +264,7 @@ export function DashboardShell({ sections, settingsHref, pharmacyName, roleLabel
           </Link>
         </header>
 
-        <main className="px-5 py-8 lg:px-10 lg:py-10">
+        <main className="px-5 py-8 lg:px-10 lg:py-10 print:p-0">
           <div className="mx-auto max-w-[1040px]">{children}</div>
         </main>
       </div>

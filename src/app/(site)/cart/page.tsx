@@ -26,7 +26,6 @@ export default async function CartPage() {
     );
   }
 
-  const blocked = cart.blockedItems.length > 0;
   const unavailable = cart.unavailableItems.length > 0;
   const pharmacy = cart.pharmacy;
 
@@ -63,13 +62,10 @@ export default async function CartPage() {
                     {item.listing.stock > 0 ? `Only ${item.listing.stock} in stock` : "No longer available"}
                   </span>
                 )}
-                {item.product.classification === "PRESCRIPTION" && !cart.approvedIds.has(item.productId) && (
-                  <Link
-                    href={`/prescription/${item.productId}`}
-                    className="mt-2 inline-block rounded-full bg-amber-tint px-2.5 py-1 text-[11.5px] font-bold text-amber no-underline"
-                  >
-                    Awaiting pharmacist approval
-                  </Link>
+                {item.product.classification === "PRESCRIPTION" && (
+                  <span className="mt-2 inline-block rounded-full bg-amber-tint px-2.5 py-1 text-[11.5px] font-bold text-amber">
+                    Prescription needed
+                  </span>
                 )}
               </div>
 
@@ -83,21 +79,24 @@ export default async function CartPage() {
         </div>
 
         <OrderSummary subtotalNgwee={cart.subtotalNgwee} note="Delivery, if you choose it, is arranged with the pharmacy and paid on arrival." sticky>
-          {blocked || unavailable ? (
+          {unavailable ? (
             <>
               <button type="button" className="btn btn-primary btn-lg w-full" disabled>
                 Go to checkout
               </button>
-              <p className="mt-3 text-[13px] leading-relaxed text-amber">
-                {blocked
-                  ? `A pharmacist still needs to approve: ${cart.blockedItems.map((i) => i.product.name).join(", ")}.`
-                  : "Update the items marked above before checking out."}
-              </p>
+              <p className="mt-3 text-[13px] leading-relaxed text-amber">Update the items marked above before checking out.</p>
             </>
           ) : (
-            <Link href="/checkout" className="btn btn-primary btn-lg w-full">
-              Go to checkout
-            </Link>
+            <>
+              <Link href="/checkout" className="btn btn-primary btn-lg w-full">
+                Go to checkout
+              </Link>
+              {cart.rxItems.length > 0 && (
+                <p className="mt-3 text-[13px] leading-relaxed text-ink-55">
+                  You will upload your prescription at checkout. The pharmacy checks it before you pay.
+                </p>
+              )}
+            </>
           )}
         </OrderSummary>
       </div>

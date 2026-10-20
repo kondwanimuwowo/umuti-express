@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/staff";
 import { createClient } from "@/lib/supabase/server";
 import { DOCUMENT_BUCKET } from "@/lib/storage";
+import { logAccess } from "@/lib/audit";
 
 const reviewSchema = z.object({
   id: z.string().min(1),
@@ -56,9 +57,11 @@ export async function reviewPharmacy(input: z.input<typeof reviewSchema>) {
 
 /** A short-lived link to one of a pharmacy's verification documents. */
 export async function getDocumentUrl(path: string) {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const known = await prisma.verificationDocument.findFirst({ where: { filePath: path }, select: { id: true } });
   if (!known) return null;
+
+  await logAccess(admin.id, "document.view", "VerificationDocument", known.id);
 
   const supabase = await createClient();
   const { data } = await supabase.storage.from(DOCUMENT_BUCKET).createSignedUrl(path, 60 * 5);

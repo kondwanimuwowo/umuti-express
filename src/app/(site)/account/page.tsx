@@ -67,12 +67,18 @@ export default async function AccountPage() {
               >
                 <div className="min-w-0">
                   <Link
-                    href={`/prescription/${rx.productId}`}
+                    href={rx.order ? `/track?code=${rx.order.code}` : "/track"}
                     className="text-[14px] font-bold text-ink no-underline hover:underline"
                   >
                     {rx.product.name}
                   </Link>
-                  <div className="text-[12.5px] text-ink-50">Uploaded {fmtDate(rx.createdAt)}</div>
+                  <div className="text-[12.5px] text-ink-50">
+                    Uploaded {fmtDate(rx.createdAt)}
+                    {rx.order && ` · Order ${rx.order.code}`}
+                  </div>
+                  {rx.status === "REJECTED" && rx.note && rx.note !== "Order cancelled" && (
+                    <div className="mt-1 text-[12.5px] text-ink-62">Pharmacist note: {rx.note}</div>
+                  )}
                 </div>
                 <span
                   className={`shrink-0 rounded-full px-3 py-1.5 text-[12px] font-bold ${

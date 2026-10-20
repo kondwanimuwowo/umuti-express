@@ -46,7 +46,7 @@ export function ProductCard({
           {/* Sits above the overlay so the button does not navigate. */}
           <div className="relative z-10">
             {p.soleListingPharmacyId ? (
-              <AddToCartButton productId={p.id} pharmacyId={p.soleListingPharmacyId} rx={p.rx} inStock compact />
+              <AddToCartButton productId={p.id} pharmacyId={p.soleListingPharmacyId} inStock compact />
             ) : (
               <Link href={`/product/${p.id}`} className="btn btn-secondary !px-4 !py-2 !text-[13.5px]">
                 Compare

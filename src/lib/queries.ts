@@ -231,18 +231,11 @@ export async function getCart(profileId: string) {
     (i) => !i.listing.active || i.listing.pharmacy.status !== "ACTIVE" || i.listing.stock < i.qty,
   );
 
-  // An Rx item may only be checked out once a pharmacist has approved a prescription for it.
-  const rxProductIds = items.filter((i) => i.product.classification === "PRESCRIPTION").map((i) => i.productId);
-  const approved = rxProductIds.length
-    ? await prisma.prescription.findMany({
-        where: { profileId, productId: { in: rxProductIds }, status: "APPROVED" },
-        select: { productId: true },
-      })
-    : [];
-  const approvedIds = new Set(approved.map((p) => p.productId));
-  const blockedItems = items.filter((i) => i.product.classification === "PRESCRIPTION" && !approvedIds.has(i.productId));
+  // Prescription items are allowed in the cart. The customer uploads the prescription at checkout
+  // and the pharmacy reviews it before anything is charged.
+  const rxItems = items.filter((i) => i.product.classification === "PRESCRIPTION");
 
-  return { items, count, pharmacy, subtotalNgwee, approvedIds, blockedItems, unavailableItems };
+  return { items, count, pharmacy, subtotalNgwee, rxItems, unavailableItems };
 }
 
 export async function getCartCount(profileId: string) {
@@ -265,6 +258,7 @@ export async function getOrder(profileId: string, code: string) {
       items: { include: { product: true } },
       pharmacy: true,
       events: { orderBy: { createdAt: "asc" } },
+      prescriptions: { select: { id: true, status: true, note: true, product: { select: { name: true } } } },
     },
   });
 }
@@ -278,6 +272,7 @@ export async function getLatestOrder(profileId: string) {
       items: { include: { product: true } },
       pharmacy: true,
       events: { orderBy: { createdAt: "asc" } },
+      prescriptions: { select: { id: true, status: true, note: true, product: { select: { name: true } } } },
     },
   });
 }
@@ -286,49 +281,34 @@ export async function getPrescriptions(profileId: string, productId?: number) {
   return prisma.prescription.findMany({
     where: { profileId, ...(productId ? { productId } : {}) },
     orderBy: { createdAt: "desc" },
-    include: { product: true, reviewer: { select: { fullName: true, email: true } } },
+    include: { product: true, order: { select: { code: true } }, reviewer: { select: { fullName: true, email: true } } },
   });
 }
 
 /**
- * The prescription review queue for one pharmacy. Pending uploads are shown to pharmacies that
- * list the product (a prescription is not yet tied to any one pharmacy until Phase 5 moves
- * review to the order); decided ones only to the pharmacy that decided them.
+ * The prescription review queue for one pharmacy: only prescriptions uploaded for an order
+ * placed with that pharmacy. A pharmacy with no order never sees a prescription.
  */
 export async function getReviewQueue(pharmacyId: string) {
   return prisma.prescription.findMany({
-    where: {
-      OR: [
-        { status: "PENDING", product: { pharmacyProducts: { some: { pharmacyId, active: true } } } },
-        { status: { not: "PENDING" }, pharmacyId },
-      ],
-    },
+    where: { order: { pharmacyId } },
     orderBy: [{ status: "asc" }, { createdAt: "asc" }],
     take: 50,
     include: {
       product: true,
+      order: { select: { code: true } },
       profile: { select: { fullName: true, email: true, phone: true } },
       reviewer: { select: { fullName: true, email: true } },
     },
   });
 }
 
-/** Whether a prescription may be reviewed or opened by this pharmacy's staff. */
+/** Whether a prescription may be opened or decided by this pharmacy's staff: it belongs to one of its orders. */
 export async function prescriptionVisibleTo(pharmacyId: string, where: Prisma.PrescriptionWhereInput) {
-  const found = await prisma.prescription.findFirst({
-    where: {
-      AND: [
-        where,
-        {
-          OR: [
-            { status: "PENDING", product: { pharmacyProducts: { some: { pharmacyId, active: true } } } },
-            { pharmacyId },
-          ],
-        },
-      ],
-    },
+  return prisma.prescription.findFirst({
+    where: { AND: [where, { order: { pharmacyId } }] },
+    include: { order: { select: { id: true, code: true, status: true } } },
   });
-  return found;
 }
 
 export type OrderView = "active" | "done";
@@ -352,9 +332,7 @@ export async function getPharmacyOrders(pharmacyId: string, view: OrderView) {
 export const getStaffCounts = cache(async (pharmacyId: string) => {
   const [orders, prescriptions, threads] = await Promise.all([
     prisma.order.count({ where: { pharmacyId, status: { in: [...ACTIVE_STATUSES] } } }),
-    prisma.prescription.count({
-      where: { status: "PENDING", product: { pharmacyProducts: { some: { pharmacyId, active: true } } } },
-    }),
+    prisma.prescription.count({ where: { status: "PENDING", order: { pharmacyId, status: "AWAITING_REVIEW" } } }),
     prisma.chatThread.findMany({
       where: threadsVisibleTo(pharmacyId),
       orderBy: { updatedAt: "desc" },
@@ -402,5 +380,25 @@ export async function getOrCreateThread(profileId: string) {
       },
     },
     include: { messages: { orderBy: { createdAt: "asc" } } },
+  });
+}
+
+/** A pharmacist's verification record with the documents they have submitted. */
+export async function getPharmacistProfile(profileId: string) {
+  return prisma.pharmacistProfile.findUnique({
+    where: { profileId },
+    include: { documents: { orderBy: { createdAt: "desc" } } },
+  });
+}
+
+/** Pharmacist applications waiting for admin, oldest first. */
+export async function getPendingPharmacists() {
+  return prisma.pharmacistProfile.findMany({
+    where: { status: "PENDING" },
+    orderBy: { createdAt: "asc" },
+    include: {
+      documents: { orderBy: { createdAt: "desc" } },
+      profile: { select: { fullName: true, email: true, phone: true, pharmacy: { select: { name: true } } } },
+    },
   });
 }

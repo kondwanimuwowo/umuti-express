@@ -67,9 +67,14 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
                   </div>
                 </div>
 
-                {view === "active" && !last && (
-                  <div className="mt-5">
-                    <AdvanceOrderButton code={o.code} />
+                {view === "active" && (
+                  <div className="mt-5 flex flex-wrap items-center gap-3">
+                    {!last && <AdvanceOrderButton code={o.code} />}
+                    {o.fulfilment === "DELIVERY" && (
+                      <Link href={`/dashboard/orders/${o.code}/label`} className="btn btn-secondary !px-4 !py-2 !text-[13px]">
+                        Rider label
+                      </Link>
+                    )}
                   </div>
                 )}
               </li>
