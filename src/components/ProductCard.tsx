@@ -2,15 +2,13 @@ import Link from "next/link";
 import { fmtK } from "@/lib/format";
 import { ImageSlot } from "./ImageSlot";
 import { AddToCartButton } from "./AddToCartButton";
-import type { Category, Product } from "@/generated/prisma";
-
-export type ProductWithCategory = Product & { category: Category };
+import type { ProductSummary } from "@/lib/queries";
 
 export function ProductCard({
   product: p,
   showCategory = false,
 }: {
-  product: ProductWithCategory;
+  product: ProductSummary;
   showCategory?: boolean;
 }) {
   return (
@@ -36,10 +34,24 @@ export function ProductCard({
         {showCategory && <p className="text-[13px] text-ink-55">{p.category.name}</p>}
 
         <div className="mt-auto flex items-center justify-between gap-3 pt-3">
-          <span className="font-display text-[16.5px] font-bold text-green-dark">{fmtK(p.priceNgwee)}</span>
-          {/* Sits above the overlay so Add does not navigate. */}
+          <div className="min-w-0">
+            <span className="font-display text-[16.5px] font-bold text-green-dark">
+              {p.listingCount > 1 && <span className="mr-1 text-[12px] font-semibold text-ink-55">From</span>}
+              {fmtK(p.fromPriceNgwee)}
+            </span>
+            <span className="block text-[12px] text-ink-50">
+              {p.listingCount} {p.listingCount === 1 ? "pharmacy" : "pharmacies"}
+            </span>
+          </div>
+          {/* Sits above the overlay so the button does not navigate. */}
           <div className="relative z-10">
-            <AddToCartButton productId={p.id} rx={p.rx} inStock={p.inStock} compact />
+            {p.soleListingPharmacyId ? (
+              <AddToCartButton productId={p.id} pharmacyId={p.soleListingPharmacyId} rx={p.rx} inStock compact />
+            ) : (
+              <Link href={`/product/${p.id}`} className="btn btn-secondary !px-4 !py-2 !text-[13.5px]">
+                Compare
+              </Link>
+            )}
           </div>
         </div>
       </div>

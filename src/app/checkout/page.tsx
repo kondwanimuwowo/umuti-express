@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
-import { getCart, getPharmacies } from "@/lib/queries";
+import { getCart } from "@/lib/queries";
 import { CheckoutForm } from "./CheckoutForm";
 
 export const metadata = { title: "Checkout | Umuti Express" };
 
 export default async function CheckoutPage() {
   const profile = await requireProfile("/checkout");
-  const [cart, pharmacies] = await Promise.all([getCart(profile.id), getPharmacies()]);
+  const cart = await getCart(profile.id);
 
-  if (cart.items.length === 0) {
+  if (cart.items.length === 0 || !cart.pharmacy) {
     return (
       <div className="shell-container py-10 text-center">
         <h1 className="font-display text-[28px] font-bold">Checkout</h1>
@@ -37,6 +37,23 @@ export default async function CheckoutPage() {
     );
   }
 
+  if (cart.unavailableItems.length > 0) {
+    return (
+      <div className="shell-container max-w-[560px] py-14 text-center">
+        <h1 className="font-display text-[28px] font-bold">Update your cart</h1>
+        <p className="mt-4 text-[15px] leading-relaxed text-ink-62">
+          These items are no longer available in your chosen quantity:{" "}
+          {cart.unavailableItems.map((i) => i.product.name).join(", ")}.
+        </p>
+        <Link href="/cart" className="btn btn-primary mt-7">
+          Back to cart
+        </Link>
+      </div>
+    );
+  }
+
+  const pharmacy = cart.pharmacy;
+
   return (
     <div className="shell-container py-10">
       <h1 className="font-display text-[28px] font-bold">Checkout</h1>
@@ -45,13 +62,18 @@ export default async function CheckoutPage() {
           productId: i.productId,
           name: i.product.name,
           qty: i.qty,
-          priceNgwee: i.product.priceNgwee,
+          priceNgwee: i.listing.priceNgwee,
         }))}
         subtotalNgwee={cart.subtotalNgwee}
-        pharmacies={pharmacies.map((p) => ({ id: p.id, name: p.name, area: p.area, hours: p.hours }))}
+        pharmacy={{
+          name: pharmacy.name,
+          area: pharmacy.area,
+          hours: pharmacy.hours,
+          offersDelivery: pharmacy.offersDelivery,
+          deliveryNote: pharmacy.deliveryNote,
+        }}
         defaultPhone={profile.phone ?? ""}
         defaultAddress={profile.address ?? ""}
-        defaultPharmacyId={profile.preferredPharmacyId ?? ""}
       />
     </div>
   );

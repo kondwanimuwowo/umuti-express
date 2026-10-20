@@ -123,8 +123,9 @@ async function main() {
 
   for (const p of PRODUCTS) {
     const photo = PHOTOS[p.id];
+    const { priceNgwee: _price, ...product } = p;
     const data = {
-      ...p,
+      ...product,
       aliases: p.aliases ?? [],
       classification: p.rx ? ("PRESCRIPTION" as const) : ("GENERAL" as const),
       imageSrc: photo?.src ?? null,
@@ -138,13 +139,18 @@ async function main() {
   );
 
   for (const ph of PHARMACIES) {
-    const data = { ...ph, status: "ACTIVE" as const };
+    const pilot = ph.id === PILOT_PHARMACY_ID;
+    const data = {
+      ...ph,
+      status: "ACTIVE" as const,
+      offersDelivery: pilot,
+      deliveryNote: pilot ? "Arranged with the pharmacy, paid on arrival" : null,
+    };
     await prisma.pharmacy.upsert({ where: { id: ph.id }, create: data, update: data });
   }
 
   // The catalogue starts out stocked by one pilot pharmacy, at the prices it had before listings existed.
-  const catalogue = await prisma.product.findMany({ select: { id: true, priceNgwee: true } });
-  for (const product of catalogue) {
+  for (const product of PRODUCTS) {
     const listing = { pharmacyId: PILOT_PHARMACY_ID, productId: product.id };
     await prisma.pharmacyProduct.upsert({
       where: { pharmacyId_productId: listing },
@@ -158,7 +164,7 @@ async function main() {
   }
 
   console.log(
-    `Seeded ${CATEGORIES.length} categories, ${PRODUCTS.length} products, ${PHARMACIES.length} pharmacies, ${catalogue.length} listings at ${PILOT_PHARMACY_ID}.`,
+    `Seeded ${CATEGORIES.length} categories, ${PRODUCTS.length} products, ${PHARMACIES.length} pharmacies, ${PRODUCTS.length} listings at ${PILOT_PHARMACY_ID}.`,
   );
   await seedAuthUsers();
 }

@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useTransition } from "react";
-import { addToCart } from "@/lib/actions/cart";
-import { useToast } from "./Toast";
+import { useAddToCart } from "./useAddToCart";
 
 export function AddToCartButton({
   productId,
+  pharmacyId,
   rx,
   inStock,
   rxApproved = false,
@@ -16,6 +14,7 @@ export function AddToCartButton({
   large = false,
 }: {
   productId: number;
+  pharmacyId: string;
   rx: boolean;
   inStock: boolean;
   rxApproved?: boolean;
@@ -23,9 +22,7 @@ export function AddToCartButton({
   compact?: boolean;
   large?: boolean;
 }) {
-  const [pending, startTransition] = useTransition();
-  const toast = useToast();
-  const router = useRouter();
+  const { add, pending, needsSwitch } = useAddToCart(productId, pharmacyId);
 
   const size = compact ? "!px-4 !py-2 !text-[13.5px]" : large ? "btn-lg" : "";
 
@@ -47,23 +44,8 @@ export function AddToCartButton({
   }
 
   return (
-    <button
-      type="button"
-      className={`btn btn-primary ${size}`}
-      disabled={pending}
-      onClick={() =>
-        startTransition(async () => {
-          const res = await addToCart({ productId, qty });
-          if (res.ok) {
-            toast(res.message);
-            router.refresh();
-          } else {
-            toast(res.error, "error");
-          }
-        })
-      }
-    >
-      {pending ? "Adding…" : compact ? "Add" : "Add to cart"}
+    <button type="button" className={`btn btn-primary ${size}`} disabled={pending} onClick={() => add(qty)}>
+      {pending ? "Adding…" : needsSwitch ? "Clear cart and add" : compact ? "Add" : "Add to cart"}
     </button>
   );
 }

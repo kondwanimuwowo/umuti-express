@@ -183,11 +183,8 @@ model Product {
   packSize       String?
   classification ProductClassification @default(GENERAL)
   status         CatalogueStatus       @default(APPROVED)
-  /// Legacy until phase 2 (price) and phase 4 (rx): the app still reads these.
-  /// Price now lives on PharmacyProduct; rx is superseded by classification.
-  priceNgwee     Int
+  /// Legacy until phase 4: the app still reads this. Superseded by classification.
   rx             Boolean               @default(false)
-  inStock        Boolean               @default(true)
   imageSrc       String?
   imagePosition  String?
   createdAt      DateTime              @default(now())
@@ -223,6 +220,8 @@ model PharmacyProduct {
   pharmacy   Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
   productId  Int
   product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  cartItems CartItem[]
 
   @@unique([pharmacyId, productId])
   @@index([productId])
@@ -267,6 +266,10 @@ model CartItem {
   productId Int
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  /// A cart holds items from one pharmacy; the price and stock come from this listing.
+  pharmacyId String
+  listing    PharmacyProduct @relation(fields: [pharmacyId, productId], references: [pharmacyId, productId], onDelete: Cascade)
+
   @@unique([profileId, productId])
   @@index([profileId])
 }
@@ -308,8 +311,6 @@ model Order {
   phone              String
   address            String?
   subtotalNgwee      Int
-  /// Legacy: delivery is paid on arrival, outside our payment. Dropped in phase 2.
-  deliveryNgwee      Int
   totalNgwee         Int
   /// Money split, saved at sale time so later setting changes never rewrite history.
   /// Null until live payments (phase 7).

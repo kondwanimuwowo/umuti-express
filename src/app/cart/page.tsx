@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireProfile } from "@/lib/auth";
 import { getCart } from "@/lib/queries";
-import { DELIVERY_FEE_NGWEE, fmtK } from "@/lib/format";
+import { fmtK } from "@/lib/format";
 import { ImageSlot } from "@/components/ImageSlot";
 import { OrderSummary } from "@/components/OrderSummary";
 import { CartRowControls } from "@/components/CartRowControls";
@@ -27,10 +27,17 @@ export default async function CartPage() {
   }
 
   const blocked = cart.blockedItems.length > 0;
+  const unavailable = cart.unavailableItems.length > 0;
+  const pharmacy = cart.pharmacy;
 
   return (
     <div className="shell-container py-10">
       <h1 className="font-display text-[28px] font-bold">Your cart</h1>
+      {pharmacy && (
+        <p className="mt-2 text-[14.5px] text-ink-55">
+          Ordering from {pharmacy.name}, {pharmacy.area}
+        </p>
+      )}
 
       <div className="mt-7 grid gap-8 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-4">
@@ -50,7 +57,12 @@ export default async function CartPage() {
                 <Link href={`/product/${item.productId}`} className="text-[15px] font-bold text-ink no-underline hover:underline">
                   {item.product.name}
                 </Link>
-                <div className="mt-1 text-[13px] text-ink-50">{fmtK(item.product.priceNgwee)} each</div>
+                <div className="mt-1 text-[13px] text-ink-50">{fmtK(item.listing.priceNgwee)} each</div>
+                {cart.unavailableItems.some((u) => u.id === item.id) && (
+                  <span className="mt-2 inline-block rounded-full bg-amber-tint px-2.5 py-1 text-[11.5px] font-bold text-amber">
+                    {item.listing.stock > 0 ? `Only ${item.listing.stock} in stock` : "No longer available"}
+                  </span>
+                )}
                 {item.product.rx && !cart.approvedIds.has(item.productId) && (
                   <Link
                     href={`/prescription/${item.productId}`}
@@ -64,21 +76,22 @@ export default async function CartPage() {
               <CartRowControls productId={item.productId} qty={item.qty} />
 
               <div className="min-w-20 text-right font-display text-[15px] font-bold text-green-dark">
-                {fmtK(item.product.priceNgwee * item.qty)}
+                {fmtK(item.listing.priceNgwee * item.qty)}
               </div>
             </div>
           ))}
         </div>
 
-        <OrderSummary subtotalNgwee={cart.subtotalNgwee} deliveryNgwee={DELIVERY_FEE_NGWEE} sticky>
-          {blocked ? (
+        <OrderSummary subtotalNgwee={cart.subtotalNgwee} note="Delivery, if you choose it, is arranged with the pharmacy and paid on arrival." sticky>
+          {blocked || unavailable ? (
             <>
               <button type="button" className="btn btn-primary btn-lg w-full" disabled>
                 Go to checkout
               </button>
               <p className="mt-3 text-[13px] leading-relaxed text-amber">
-                A pharmacist still needs to approve:{" "}
-                {cart.blockedItems.map((i) => i.product.name).join(", ")}.
+                {blocked
+                  ? `A pharmacist still needs to approve: ${cart.blockedItems.map((i) => i.product.name).join(", ")}.`
+                  : "Update the items marked above before checking out."}
               </p>
             </>
           ) : (

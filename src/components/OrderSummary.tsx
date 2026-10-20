@@ -3,13 +3,14 @@ import { fmtK } from "@/lib/format";
 
 export function OrderSummary({
   subtotalNgwee,
-  deliveryNgwee,
+  note,
   lines,
   children,
   sticky = false,
 }: {
   subtotalNgwee: number;
-  deliveryNgwee: number;
+  /** Shown under the total, e.g. how delivery is paid. */
+  note?: string;
   lines?: ReactNode;
   children?: ReactNode;
   sticky?: boolean;
@@ -25,16 +26,14 @@ export function OrderSummary({
           <dt className="text-ink-62">Subtotal</dt>
           <dd className="font-semibold">{fmtK(subtotalNgwee)}</dd>
         </div>
-        <div className="flex justify-between">
-          <dt className="text-ink-62">Delivery</dt>
-          <dd className="font-semibold">{deliveryNgwee === 0 ? "Free" : fmtK(deliveryNgwee)}</dd>
-        </div>
       </dl>
 
       <div className="mt-4 flex items-center justify-between border-t border-black/[0.08] pt-4">
         <span className="font-display text-[15.5px] font-bold">Total</span>
-        <span className="font-display text-[20px] font-bold text-green-dark">{fmtK(subtotalNgwee + deliveryNgwee)}</span>
+        <span className="font-display text-[20px] font-bold text-green-dark">{fmtK(subtotalNgwee)}</span>
       </div>
+
+      {note && <p className="mt-3 text-[12.5px] leading-relaxed text-ink-55">{note}</p>}
 
       {children && <div className="mt-5">{children}</div>}
     </div>

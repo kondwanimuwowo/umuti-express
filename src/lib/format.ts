@@ -1,6 +1,4 @@
 /** Money is stored as integer ngwee. 1 kwacha = 100 ngwee. */
-export const DELIVERY_FEE_NGWEE = 2500;
-
 export function fmtK(ngwee: number): string {
   return "K" + (ngwee / 100).toFixed(2);
 }
