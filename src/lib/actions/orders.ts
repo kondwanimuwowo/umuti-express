@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireProfile, requireRole } from "@/lib/auth";
+import { requireProfile } from "@/lib/auth";
+import { requireStaff } from "@/lib/staff";
 import { getCart } from "@/lib/queries";
 import { DELIVERY_STAGES, PICKUP_STAGES } from "@/lib/format";
 import { chargeMobileMoney } from "@/lib/payments";
@@ -142,12 +143,13 @@ export async function placeOrder(raw: unknown) {
   redirect(`/order/confirmation?code=${order.code}`);
 }
 
-/** Staff action: move an order to its next tracking stage. */
+/** Staff action: move one of their own pharmacy's orders to its next tracking stage. */
 export async function advanceOrder(input: { code: string }) {
   const { code } = z.object({ code: z.string().min(1) }).parse(input);
-  await requireRole(["PHARMACIST", "ADMIN"], "/pharmacist");
+  const { pharmacy } = await requireStaff("/dashboard/orders");
 
-  const order = await prisma.order.findUnique({ where: { code } });
+  // Scoped to the staff member's pharmacy, so another pharmacy's order reads as not found.
+  const order = await prisma.order.findFirst({ where: { code, pharmacyId: pharmacy.id } });
   if (!order) return { ok: false as const, error: "Order not found." };
 
   const stages: readonly OrderStatus[] =
@@ -165,6 +167,6 @@ export async function advanceOrder(input: { code: string }) {
 
   revalidatePath("/track");
   revalidatePath("/account");
-  revalidatePath("/pharmacist");
+  revalidatePath("/dashboard/orders");
   return { ok: true as const };
 }

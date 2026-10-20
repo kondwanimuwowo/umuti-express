@@ -6,10 +6,13 @@ export const getCategories = cache(async () =>
   prisma.category.findMany({ orderBy: { sortOrder: "asc" } }),
 );
 
-export const getPharmacies = cache(async () => prisma.pharmacy.findMany({ orderBy: { name: "asc" } }));
+/** Public pharmacies only: pending applications and suspended pharmacies stay hidden. */
+export const getPharmacies = cache(async () =>
+  prisma.pharmacy.findMany({ where: { status: "ACTIVE" }, orderBy: { name: "asc" } }),
+);
 
 export const getPharmacy = cache(async (id: string) =>
-  prisma.pharmacy.findUnique({ where: { id } }),
+  prisma.pharmacy.findFirst({ where: { id, status: "ACTIVE" } }),
 );
 
 export type ProductFilter = { q?: string; category?: string; take?: number };
@@ -215,9 +218,19 @@ export async function getPrescriptions(profileId: string, productId?: number) {
   });
 }
 
-/** The pharmacist review queue. Pending first, then recently decided. */
-export async function getReviewQueue() {
+/**
+ * The prescription review queue for one pharmacy. Pending uploads are shown to pharmacies that
+ * list the product (a prescription is not yet tied to any one pharmacy until Phase 5 moves
+ * review to the order); decided ones only to the pharmacy that decided them.
+ */
+export async function getReviewQueue(pharmacyId: string) {
   return prisma.prescription.findMany({
+    where: {
+      OR: [
+        { status: "PENDING", product: { pharmacyProducts: { some: { pharmacyId, active: true } } } },
+        { status: { not: "PENDING" }, pharmacyId },
+      ],
+    },
     orderBy: [{ status: "asc" }, { createdAt: "asc" }],
     take: 50,
     include: {
@@ -226,6 +239,59 @@ export async function getReviewQueue() {
       reviewer: { select: { fullName: true, email: true } },
     },
   });
+}
+
+/** Whether a prescription may be reviewed or opened by this pharmacy's staff. */
+export async function prescriptionVisibleTo(pharmacyId: string, where: Prisma.PrescriptionWhereInput) {
+  const found = await prisma.prescription.findFirst({
+    where: {
+      AND: [
+        where,
+        {
+          OR: [
+            { status: "PENDING", product: { pharmacyProducts: { some: { pharmacyId, active: true } } } },
+            { pharmacyId },
+          ],
+        },
+      ],
+    },
+  });
+  return found;
+}
+
+export type OrderView = "active" | "done";
+
+const ACTIVE_STATUSES = ["PREPARING", "READY", "OUT_FOR_DELIVERY"] as const;
+
+/** One pharmacy's orders. Customers' contact details are included: the pharmacy needs them to fulfil. */
+export async function getPharmacyOrders(pharmacyId: string, view: OrderView) {
+  return prisma.order.findMany({
+    where: {
+      pharmacyId,
+      status: view === "active" ? { in: [...ACTIVE_STATUSES] } : { in: ["COMPLETED", "CANCELLED"] },
+    },
+    orderBy: { createdAt: view === "active" ? "asc" : "desc" },
+    take: 100,
+    include: { items: true, profile: { select: { fullName: true } } },
+  });
+}
+
+export async function getPharmacyOrderCounts(pharmacyId: string) {
+  const [active, done] = await Promise.all([
+    prisma.order.count({ where: { pharmacyId, status: { in: [...ACTIVE_STATUSES] } } }),
+    prisma.order.count({ where: { pharmacyId, status: { in: ["COMPLETED", "CANCELLED"] } } }),
+  ]);
+  return { active, done };
+}
+
+/**
+ * Chat threads a pharmacy may see: customers who ordered from it or chose it as their pharmacy.
+ * Chat has no pharmacy of its own yet; consultations replace it in Phase 8.
+ */
+export function threadsVisibleTo(pharmacyId: string): Prisma.ChatThreadWhereInput {
+  return {
+    profile: { OR: [{ preferredPharmacyId: pharmacyId }, { orders: { some: { pharmacyId } } }] },
+  };
 }
 
 export async function getOrCreateThread(profileId: string) {

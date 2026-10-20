@@ -1,23 +1,23 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/staff";
 import { getReviewQueue } from "@/lib/queries";
 import { RX_STATUS_LABEL, fmtDate, fmtTime } from "@/lib/format";
 import { ReviewCard } from "./ReviewCard";
 
 export const metadata = { title: "Prescription review | Umuti Express" };
 
-export default async function PharmacistPage() {
-  const staff = await requireRole(["PHARMACIST", "ADMIN"], "/pharmacist");
-  const queue = await getReviewQueue();
+export default async function PrescriptionsPage() {
+  const { profile: staff, pharmacy } = await requireStaff("/dashboard/prescriptions");
+  const queue = await getReviewQueue(pharmacy.id);
 
   const pending = queue.filter((rx) => rx.status === "PENDING");
   const decided = queue.filter((rx) => rx.status !== "PENDING");
 
   return (
-    <div className="shell-container max-w-[860px] py-12">
+    <div className="max-w-[860px]">
       <h1 className="font-display text-[28px] font-bold">Prescription review</h1>
       <p className="mt-2.5 text-[14.5px] text-ink-62">
-        Signed in as {staff.fullName ?? staff.email}. Only a pharmacist can approve a prescription item for ordering.
+        Signed in as {staff.fullName ?? staff.email}. Only a pharmacist can approve a prescription item for ordering. You see requests for medicines your pharmacy lists, and the ones you have decided.
       </p>
 
       <section className="mt-9">

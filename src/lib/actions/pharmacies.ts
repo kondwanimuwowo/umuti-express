@@ -9,7 +9,7 @@ export async function setPreferredPharmacy(input: { pharmacyId: string }) {
   const { pharmacyId } = z.object({ pharmacyId: z.string().min(1) }).parse(input);
   const profile = await requireProfile("/pharmacies");
 
-  const pharmacy = await prisma.pharmacy.findUnique({ where: { id: pharmacyId } });
+  const pharmacy = await prisma.pharmacy.findFirst({ where: { id: pharmacyId, status: "ACTIVE" } });
   if (!pharmacy) return { ok: false as const, error: "That pharmacy is no longer listed." };
 
   await prisma.profile.update({

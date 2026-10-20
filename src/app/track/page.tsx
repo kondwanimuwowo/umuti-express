@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { requireProfile, isStaff } from "@/lib/auth";
+import { requireProfile } from "@/lib/auth";
 import { getLatestOrder, getOrder } from "@/lib/queries";
 import { DELIVERY_STAGES, PICKUP_STAGES, fmtDate, fmtTime } from "@/lib/format";
-import { AdvanceOrderButton } from "@/components/AdvanceOrderButton";
 import { CheckIcon } from "@/components/icons";
 import type { OrderStatus } from "@/generated/prisma";
 
@@ -81,7 +80,6 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
       </ol>
 
       {/* Advancing an order is a staff action, not something the customer can do. */}
-      {isStaff(profile) && current < stages.length - 1 && <AdvanceOrderButton code={order.code} />}
     </div>
   );
 }

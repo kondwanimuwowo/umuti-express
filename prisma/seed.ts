@@ -75,8 +75,8 @@ const SETTINGS = {
 };
 
 const DEMO_USERS = [
-  { email: "customer@umuti.test", password: "umuti-demo-1234", fullName: "Thandiwe Banda", phone: "0977123456", role: "CUSTOMER" as Role, pharmacyId: null },
-  { email: "pharmacist@umuti.test", password: "umuti-demo-1234", fullName: "Chanda Mwale", phone: "0966123456", role: "PHARMACIST" as Role, pharmacyId: "p2" },
+  { email: "customer@umuti.test", password: "umuti-demo-1234", fullName: "Thandiwe Banda", phone: "0977123456", role: "CUSTOMER" as Role, pharmacyId: null, isPharmacyOwner: false },
+  { email: "pharmacist@umuti.test", password: "umuti-demo-1234", fullName: "Chanda Mwale", phone: "0966123456", role: "PHARMACIST" as Role, pharmacyId: "p2", isPharmacyOwner: true },
 ];
 
 /** Creates the Supabase auth users so the demo logins work, if the key is set. */
@@ -109,8 +109,8 @@ async function seedAuthUsers() {
 
     await prisma.profile.upsert({
       where: { id },
-      create: { id, email: u.email, fullName: u.fullName, phone: u.phone, role: u.role, pharmacyId: u.pharmacyId },
-      update: { role: u.role, pharmacyId: u.pharmacyId, fullName: u.fullName, phone: u.phone },
+      create: { id, email: u.email, fullName: u.fullName, phone: u.phone, role: u.role, pharmacyId: u.pharmacyId, isPharmacyOwner: u.isPharmacyOwner },
+      update: { role: u.role, pharmacyId: u.pharmacyId, isPharmacyOwner: u.isPharmacyOwner, fullName: u.fullName, phone: u.phone },
     });
     console.log(`  ${u.role.toLowerCase()}: ${u.email} / ${u.password}`);
   }

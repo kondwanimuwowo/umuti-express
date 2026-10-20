@@ -32,12 +32,16 @@ export default async function AccountPage() {
           <div className="text-[13.5px] text-ink-55">
             {[profile.phone, profile.address].filter(Boolean).join(" · ") || profile.email}
           </div>
-          {profile.role !== "CUSTOMER" && (
+          {profile.pharmacyId || profile.role === "ADMIN" ? (
             <Link
-              href="/pharmacist"
+              href="/dashboard"
               className="mt-2 inline-block rounded-full bg-green-tint px-2.5 py-1 text-[11.5px] font-bold text-green-dark no-underline"
             >
-              {profile.role === "ADMIN" ? "Admin" : "Pharmacist"} &middot; open review queue
+              Open dashboard
+            </Link>
+          ) : (
+            <Link href="/partner/apply" className="mt-2 inline-block text-[12.5px] font-semibold text-ink-55 hover:text-ink">
+              Own a pharmacy? List it on Umuti Express
             </Link>
           )}
         </div>

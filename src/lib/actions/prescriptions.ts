@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireProfile, requireRole } from "@/lib/auth";
+import { requireProfile } from "@/lib/auth";
+import { requireStaff } from "@/lib/staff";
+import { prescriptionVisibleTo } from "@/lib/queries";
 import { createClient } from "@/lib/supabase/server";
 
 const BUCKET = "prescriptions";
@@ -48,7 +50,7 @@ export async function uploadPrescription(formData: FormData) {
 
   revalidatePath(`/product/${productId}`);
   revalidatePath(`/prescription/${productId}`);
-  revalidatePath("/pharmacist");
+  revalidatePath("/dashboard/prescriptions");
   return { ok: true as const, message: "Sent to a pharmacist for review" };
 }
 
@@ -65,9 +67,10 @@ export async function reviewPrescription(input: { id: string; decision: "APPROVE
     })
     .parse(input);
 
-  const reviewer = await requireRole(["PHARMACIST", "ADMIN"], "/pharmacist");
+  const { profile: reviewer, pharmacy } = await requireStaff("/dashboard/prescriptions");
 
-  const rx = await prisma.prescription.findUnique({ where: { id } });
+  // Only prescriptions this pharmacy is allowed to see can be decided by its staff.
+  const rx = await prescriptionVisibleTo(pharmacy.id, { id });
   if (!rx) return { ok: false as const, error: "Prescription not found." };
   if (rx.status !== "PENDING") return { ok: false as const, error: "That prescription was already reviewed." };
   if (decision === "REJECTED" && !note?.trim()) {
@@ -81,11 +84,11 @@ export async function reviewPrescription(input: { id: string; decision: "APPROVE
       note: note?.trim() || null,
       reviewerId: reviewer.id,
       reviewedAt: new Date(),
-      pharmacyId: reviewer.pharmacyId,
+      pharmacyId: pharmacy.id,
     },
   });
 
-  revalidatePath("/pharmacist");
+  revalidatePath("/dashboard/prescriptions");
   revalidatePath("/cart");
   revalidatePath(`/prescription/${rx.productId}`);
   return { ok: true as const, message: decision === "APPROVED" ? "Approved" : "Marked as not approved" };
@@ -93,7 +96,10 @@ export async function reviewPrescription(input: { id: string; decision: "APPROVE
 
 /** A signed, short-lived URL so a pharmacist can view an uploaded prescription. */
 export async function getPrescriptionUrl(path: string) {
-  await requireRole(["PHARMACIST", "ADMIN"], "/pharmacist");
+  const { pharmacy } = await requireStaff("/dashboard/prescriptions");
+  const rx = await prescriptionVisibleTo(pharmacy.id, { imagePath: path });
+  if (!rx) return null;
+
   const supabase = await createClient();
   const { data } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 5);
   return data?.signedUrl ?? null;

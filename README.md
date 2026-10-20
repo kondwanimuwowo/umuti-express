@@ -46,6 +46,40 @@ using (
 );
 ```
 
+### Pharmacy document storage
+
+Pharmacies upload their registration documents when they apply. Create a second **private** bucket
+named `pharmacy-documents`, with these policies. Each applicant writes only into a folder named after
+their own user id, and only that user or an admin can read:
+
+```sql
+create policy "applicants upload their own documents"
+on storage.objects for insert to authenticated
+with check (
+  bucket_id = 'pharmacy-documents'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+create policy "owner or admin reads documents"
+on storage.objects for select to authenticated
+using (
+  bucket_id = 'pharmacy-documents'
+  and (
+    (storage.foldername(name))[1] = auth.uid()::text
+    or exists (select 1 from "Profile" p where p.id = auth.uid() and p.role = 'ADMIN')
+  )
+);
+```
+
+### Making an admin
+
+Admins review pharmacy applications at `/dashboard/admin`. There is no sign-up route for it. Create
+the account normally, then promote it in the Supabase SQL editor:
+
+```sql
+update "Profile" set role = 'ADMIN' where email = 'you@example.com';
+```
+
 If `SUPABASE_SERVICE_ROLE_KEY` is set, the seed also creates a demo customer and a demo pharmacist
 and prints their logins in the terminal. Use it on a local or throwaway project only.
 
@@ -53,7 +87,8 @@ and prints their logins in the terminal. Use it on a local or throwaway project 
 
 - `src/app/` one route per screen: `/`, `/shop`, `/product/[id]`, `/prescription/[id]`, `/pharmacies`,
   `/cart`, `/checkout`, `/order/confirmation`, `/track`, `/account`, `/chat`, `/sign-in`, `/sign-up`,
-  and the staff-only `/pharmacist` and `/pharmacist/chats`
+  `/partner/apply` (a pharmacy applies to list), `/join/[token]` (staff accept an invite), and the
+  staff-only `/dashboard` (orders, prescriptions, chats, settings; `/dashboard/admin` for admins)
 - `prisma/schema.prisma` the data model; `prisma/seed.ts` the catalogue and demo users
 - `src/lib/queries.ts` server-side reads, `src/lib/actions/` server actions (cart, orders,
   prescriptions, chat, account, pharmacies)
@@ -65,10 +100,18 @@ and prints their logins in the terminal. Use it on a local or throwaway project 
 
 ## Roles
 
-A customer uploads a prescription; only a `PHARMACIST` or `ADMIN` can approve it, from
-`/pharmacist`. An Rx product cannot be added to the cart or checked out until an approved
-prescription exists for it, and that rule is enforced in the server action rather than the UI.
-Order tracking stages are advanced by staff, not the customer.
+- **Customer** shops, uploads prescriptions, orders and chats.
+- **Pharmacy owner** applies at `/partner/apply` with registration documents. The pharmacy stays
+  hidden and the owner has no staff access until an admin activates it. Owners edit the pharmacy's
+  details and invite staff with single-use links from `/dashboard/settings`.
+- **Pharmacist (staff)** joins through an invite link and manages their own pharmacy's orders,
+  prescriptions and chats. Every dashboard query and action is scoped to that pharmacy.
+- **Admin** reviews applications, sets each pharmacy's map location and activates or suspends it.
+
+A customer uploads a prescription; only a pharmacist at a pharmacy that lists the medicine can
+approve it. An Rx product cannot be added to the cart or checked out until an approved prescription
+exists for it, and that rule is enforced in the server action rather than the UI. Order stages are
+advanced by the pharmacy that holds the order, not the customer.
 
 ## Not wired up yet
 

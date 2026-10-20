@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getProfile, isStaff } from "@/lib/auth";
+import { getProfile } from "@/lib/auth";
 import { getCartCount } from "@/lib/queries";
 import { BagIcon, LogoMark, UserIcon } from "./icons";
 import { MobileNav } from "./MobileNav";
@@ -16,7 +16,7 @@ export async function SiteHeader() {
   const profile = await getProfile();
   const cartCount = profile ? await getCartCount(profile.id) : 0;
 
-  const links = isStaff(profile) ? [...LINKS, { href: "/pharmacist", label: "Review queue" }] : LINKS;
+  const links = profile?.pharmacyId || profile?.role === "ADMIN" ? [...LINKS, { href: "/dashboard", label: "Dashboard" }] : LINKS;
 
   return (
     <header className="sticky top-0 z-40 bg-white shadow-nav">

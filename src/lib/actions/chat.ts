@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireProfile, requireRole } from "@/lib/auth";
-import { getOrCreateThread } from "@/lib/queries";
+import { requireProfile } from "@/lib/auth";
+import { requireStaff } from "@/lib/staff";
+import { getOrCreateThread, threadsVisibleTo } from "@/lib/queries";
 
 export async function sendChatMessage(input: { body: string }) {
   const { body } = z.object({ body: z.string().trim().min(1).max(2000) }).parse(input);
@@ -17,7 +18,7 @@ export async function sendChatMessage(input: { body: string }) {
   await prisma.chatThread.update({ where: { id: thread.id }, data: { updatedAt: new Date() } });
 
   revalidatePath("/chat");
-  revalidatePath("/pharmacist/chats");
+  revalidatePath("/dashboard/chats");
   return { ok: true as const };
 }
 
@@ -26,9 +27,9 @@ export async function replyToThread(input: { threadId: string; body: string }) {
   const { threadId, body } = z
     .object({ threadId: z.string().min(1), body: z.string().trim().min(1).max(2000) })
     .parse(input);
-  const staff = await requireRole(["PHARMACIST", "ADMIN"], "/pharmacist/chats");
+  const { profile: staff, pharmacy } = await requireStaff("/dashboard/chats");
 
-  const thread = await prisma.chatThread.findUnique({ where: { id: threadId } });
+  const thread = await prisma.chatThread.findFirst({ where: { id: threadId, ...threadsVisibleTo(pharmacy.id) } });
   if (!thread) return { ok: false as const, error: "Conversation not found." };
 
   await prisma.chatMessage.create({
@@ -37,6 +38,6 @@ export async function replyToThread(input: { threadId: string; body: string }) {
   await prisma.chatThread.update({ where: { id: threadId }, data: { updatedAt: new Date() } });
 
   revalidatePath("/chat");
-  revalidatePath("/pharmacist/chats");
+  revalidatePath("/dashboard/chats");
   return { ok: true as const };
 }

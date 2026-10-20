@@ -235,7 +235,11 @@ model Pharmacy {
   lat            Float
   lng            Float
   imageSrc       String?
+  address        String?
+  phone          String?
   status         PharmacyStatus @default(PENDING)
+  /// Admin's note when an application is not approved or a pharmacy is suspended.
+  reviewNote     String?
   /// Delivery is arranged between pharmacy and buyer and paid on arrival; this is what the buyer sees.
   offersDelivery Boolean        @default(false)
   deliveryNote   String?
@@ -251,6 +255,7 @@ model Pharmacy {
   ledgerEntries    LedgerEntry[]
   payouts          Payout[]
   legalAcceptances LegalAcceptance[]
+  invites          PharmacyInvite[]
 
   @@index([area])
   @@index([status])
@@ -568,4 +573,21 @@ model AccessLog {
 
   @@index([subjectType, subjectId])
   @@index([actorId, createdAt])
+}
+
+/// A single-use link an owner shares so a new member of staff joins the pharmacy.
+model PharmacyInvite {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  /// Who it is for, so the owner can tell invites apart. Not used to match accounts.
+  label     String?
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  pharmacyId String
+  pharmacy   Pharmacy @relation(fields: [pharmacyId], references: [id], onDelete: Cascade)
+  usedById   String?  @db.Uuid
+
+  @@index([pharmacyId])
 }

@@ -1,14 +1,16 @@
-import { requireRole } from "@/lib/auth";
+import { requireStaff } from "@/lib/staff";
 import { prisma } from "@/lib/prisma";
+import { threadsVisibleTo } from "@/lib/queries";
 import { fmtDate, fmtTime } from "@/lib/format";
 import { ReplyForm } from "./ReplyForm";
 
 export const metadata = { title: "Patient chats | Umuti Express" };
 
-export default async function PharmacistChatsPage() {
-  await requireRole(["PHARMACIST", "ADMIN"], "/pharmacist/chats");
+export default async function ChatsPage() {
+  const { pharmacy } = await requireStaff("/dashboard/chats");
 
   const threads = await prisma.chatThread.findMany({
+    where: threadsVisibleTo(pharmacy.id),
     orderBy: { updatedAt: "desc" },
     take: 25,
     include: {
@@ -18,9 +20,9 @@ export default async function PharmacistChatsPage() {
   });
 
   return (
-    <div className="shell-container max-w-[860px] py-12">
+    <div className="max-w-[860px]">
       <h1 className="font-display text-[28px] font-bold">Patient chats</h1>
-      <p className="mt-2.5 text-[14.5px] text-ink-62">Replies are sent as the pharmacy team.</p>
+      <p className="mt-2.5 text-[14.5px] text-ink-62">Customers who ordered from, or chose, your pharmacy. Replies are sent as the pharmacy team.</p>
 
       {threads.length === 0 ? (
         <p className="mt-9 rounded-card bg-white p-8 text-center text-[15px] text-ink-55 shadow-card">
