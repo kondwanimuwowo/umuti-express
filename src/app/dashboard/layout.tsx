@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getStaffCounts } from "@/lib/queries";
 import { DashboardNav } from "./DashboardNav";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -14,12 +15,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const staffAccess = pharmacy?.status === "ACTIVE" && (profile.role === "PHARMACIST" || isAdmin);
 
-  const links: { href: string; label: string }[] = [];
+  const counts = staffAccess && pharmacy ? await getStaffCounts(pharmacy.id) : null;
+
+  const links: { href: string; label: string; count?: number }[] = [];
   if (staffAccess) {
     links.push(
-      { href: "/dashboard/orders", label: "Orders" },
-      { href: "/dashboard/prescriptions", label: "Prescriptions" },
-      { href: "/dashboard/chats", label: "Chats" },
+      { href: "/dashboard/orders", label: "Orders", count: counts?.orders },
+      { href: "/dashboard/prescriptions", label: "Prescriptions", count: counts?.prescriptions },
+      { href: "/dashboard/chats", label: "Chats", count: counts?.chats },
     );
     if (profile.isPharmacyOwner) links.push({ href: "/dashboard/settings", label: "Settings" });
   }

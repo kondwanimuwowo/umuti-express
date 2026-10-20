@@ -276,6 +276,24 @@ export async function getPharmacyOrders(pharmacyId: string, view: OrderView) {
   });
 }
 
+/** What is waiting on a pharmacy's staff: shown as badges in the dashboard navigation. */
+export const getStaffCounts = cache(async (pharmacyId: string) => {
+  const [orders, prescriptions, threads] = await Promise.all([
+    prisma.order.count({ where: { pharmacyId, status: { in: [...ACTIVE_STATUSES] } } }),
+    prisma.prescription.count({
+      where: { status: "PENDING", product: { pharmacyProducts: { some: { pharmacyId, active: true } } } },
+    }),
+    prisma.chatThread.findMany({
+      where: threadsVisibleTo(pharmacyId),
+      orderBy: { updatedAt: "desc" },
+      take: 25,
+      select: { messages: { orderBy: { createdAt: "desc" }, take: 1, select: { authorRole: true } } },
+    }),
+  ]);
+  const chats = threads.filter((t) => t.messages[0]?.authorRole === "CUSTOMER").length;
+  return { orders, prescriptions, chats };
+});
+
 export async function getPharmacyOrderCounts(pharmacyId: string) {
   const [active, done] = await Promise.all([
     prisma.order.count({ where: { pharmacyId, status: { in: [...ACTIVE_STATUSES] } } }),
