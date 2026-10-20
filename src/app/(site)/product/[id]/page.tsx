@@ -78,6 +78,13 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           )}
 
           <p className="mt-5 text-[15px] leading-relaxed text-ink-70">{product.blurb}</p>
+          <p className="mt-2 text-[12.5px] leading-relaxed text-ink-50">
+            Product details are for reference and are not medical advice. Read the label and leaflet, and ask a pharmacist if
+            unsure.{" "}
+            <Link href="/legal/medical-disclaimer" className="font-semibold text-green-dark">
+              Medical Disclaimer
+            </Link>
+          </p>
 
           <div className="mt-10 border-t border-black/[0.08] pt-7">
             <h2 className="mb-4 font-display text-[14.5px] font-bold">

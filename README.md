@@ -120,6 +120,19 @@ with no order cannot open a prescription. Delivery orders have a printable rider
 nothing about the medicines. Order stages are advanced by the pharmacy that holds the order, not
 the customer.
 
+## Legal documents
+
+The Terms of Service, Privacy Policy, Medical Disclaimer, Pharmacy Partner Agreement and Consultation
+Terms live in `src/content/legal/`, one file each, and are served at `/legal/<slug>`. Each carries a
+`version` and `effectiveDate`. To change one, edit its file and bump the version: the first time a
+version is needed its text is stored in `LegalDocument`, and everyone has to accept the new version
+afresh (`LegalAcceptance` keeps who accepted which version, when, and from which IP address).
+
+- Customers accept the terms and privacy policy at sign-up, and again at checkout if the version has changed.
+- A pharmacy cannot apply without accepting the partner agreement, and an admin cannot activate it
+  unless its owner has accepted the current version. Owners are asked to accept new versions in the dashboard.
+- Set `NEXT_PUBLIC_SUPPORT_EMAIL` so the documents give a contact address. Without it they point to the in-app chat.
+
 ## Not wired up yet
 
 Mobile money payment is simulated: `chargeMobileMoney` in `src/lib/payments.ts` returns a

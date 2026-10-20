@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { applyAsPharmacy } from "@/lib/actions/partner";
@@ -41,6 +42,17 @@ export function ApplyForm() {
           <FileField label="Business licence" name="licence" />
         </div>
       </section>
+
+      <label className="flex items-start gap-3 rounded-card bg-white p-5 text-[13.5px] leading-relaxed text-ink-70 shadow-card">
+        <input type="checkbox" name="acceptAgreement" required className="mt-1 h-4 w-4 shrink-0 accent-[var(--color-green)]" />
+        <span>
+          I am authorised to act for this pharmacy and accept the{" "}
+          <Link href="/legal/partner-agreement" target="_blank" className="font-bold text-green-dark">
+            Pharmacy Partner Agreement
+          </Link>{" "}
+          on its behalf.
+        </span>
+      </label>
 
       <button type="submit" className="btn btn-primary btn-lg self-start" disabled={pending}>
         {pending ? "Sending…" : "Send application"}

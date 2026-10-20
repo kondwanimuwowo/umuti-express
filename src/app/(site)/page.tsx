@@ -14,10 +14,10 @@ export default async function HomePage() {
       <section className="bg-navy py-10">
         <div className="shell-container">
           <h1 className="max-w-[640px] font-display text-[26px] leading-tight font-bold text-white sm:text-[32px]">
-            Order medicine without leaving home
+            Medicines from pharmacies in Lusaka
           </h1>
           <p className="mt-2.5 max-w-[520px] text-[14.5px] leading-relaxed text-white/70">
-            Medicines from pharmacies across Lusaka, delivered or ready for pickup.
+            Search what independent pharmacies list. Collect your order from the pharmacy, or arrange delivery with it where it offers it.
           </p>
 
           <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -78,12 +78,12 @@ export default async function HomePage() {
             className="h-[260px] w-full rounded-card"
           />
           <div>
-            <h2 className="font-display text-[22px] leading-tight font-bold">Pick up from a pharmacy near you</h2>
+            <h2 className="font-display text-[22px] leading-tight font-bold">Partner pharmacies</h2>
             <p className="mt-3 text-[14.5px] leading-relaxed text-ink-70">
-              We work with pharmacies across Lusaka. Search by area to see opening hours, distance and stock.
+              Independent pharmacies list their medicines on Umuti Express. Browse by area to see where each one is and when it is open.
             </p>
             <Link href="/pharmacies" className="btn btn-primary btn-lg mt-5">
-              Find a pharmacy
+              Browse pharmacies
             </Link>
           </div>
         </div>

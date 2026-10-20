@@ -9,7 +9,7 @@ const openSans = Open_Sans({ subsets: ["latin"], weight: ["400", "600", "700", "
 
 export const metadata: Metadata = {
   title: "Umuti Express",
-  description: "Order medicine online from partner pharmacies across Lusaka, with home delivery or pickup.",
+  description: "Medicines listed by independent partner pharmacies in Lusaka. Collect from the pharmacy, or arrange delivery with it.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

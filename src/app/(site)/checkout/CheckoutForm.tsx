@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { placeOrder } from "@/lib/actions/orders";
 import { fmtK } from "@/lib/format";
@@ -137,7 +138,7 @@ export function CheckoutForm({
           <p className="mt-3 text-[12.5px] text-ink-50">
             {needsPrescription
               ? "You will not be charged now. We ask for payment once the pharmacy approves your prescription."
-              : "Payments are processed securely via Lenco by BroadPay."}
+              : "Payments are processed by Lenco by BroadPay."}
           </p>
         </section>
 
@@ -149,7 +150,15 @@ export function CheckoutForm({
             className="mt-1 h-4 w-4 shrink-0 accent-[var(--color-green)]"
           />
           <span>
-            I agree that Umuti Express shares my name, phone number
+            I agree to the{" "}
+            <Link href="/legal/terms" target="_blank" className="font-bold text-green-dark">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/legal/privacy" target="_blank" className="font-bold text-green-dark">
+              Privacy Policy
+            </Link>
+            , and that Umuti Express shares my name, phone number
             {fulfilment === "DELIVERY" && ", delivery address"}
             {needsPrescription && " and prescription"} with {pharmacy.name}, only to fulfil this order.
           </span>

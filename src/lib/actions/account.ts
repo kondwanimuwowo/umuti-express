@@ -6,6 +6,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { recordAcceptance } from "@/lib/legal";
 
 const phoneRule = z
   .string()
@@ -22,6 +23,9 @@ export async function signUp(formData: FormData) {
     })
     .safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0].message };
+  if (formData.get("acceptTerms") !== "on") {
+    return { ok: false as const, error: "Agree to the Terms of Service and Privacy Policy to create an account." };
+  }
 
   const { fullName, email, phone, password } = parsed.data;
   const supabase = await createClient();
@@ -38,6 +42,7 @@ export async function signUp(formData: FormData) {
     create: { id: data.user.id, email, fullName, phone },
     update: { email, fullName, phone },
   });
+  await recordAcceptance({ profileId: data.user.id, types: ["TERMS", "PRIVACY"] });
 
   if (!data.session) {
     return { ok: true as const, message: "Check your email to confirm your account." };

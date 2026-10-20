@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 import { getStaffCounts } from "@/lib/queries";
+import { hasAcceptedCurrent } from "@/lib/legal";
 import { DashboardShell, type NavSection } from "./DashboardShell";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -44,6 +46,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
     });
   }
 
+  const needsAgreement = staffAccess && profile.isPharmacyOwner && !(await hasAcceptedCurrent(profile.id, "PARTNER"));
+
   const roleLabel = isAdmin ? "Admin" : profile.isPharmacyOwner ? "Owner" : "Pharmacist";
 
   return (
@@ -54,6 +58,14 @@ export default async function DashboardLayout({ children }: { children: React.Re
       roleLabel={roleLabel}
       user={{ name: profile.fullName ?? profile.email, email: profile.email }}
     >
+      {needsAgreement && (
+        <div className="mb-7 rounded-card bg-amber-tint px-5 py-4 text-[14px] leading-relaxed text-amber">
+          <strong className="font-bold">The Pharmacy Partner Agreement needs your acceptance.</strong>{" "}
+          <Link href="/dashboard/agreement" className="font-bold underline">
+            Review and accept
+          </Link>
+        </div>
+      )}
       {children}
     </DashboardShell>
   );

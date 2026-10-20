@@ -40,19 +40,19 @@ const PHOTOS: Record<number, { src: string; position: string }> = {
 };
 
 const PRODUCTS = [
-  { id: 1, name: "Panadol Extra", categorySlug: "pain", priceNgwee: k(25), rx: false, genericName: "Paracetamol", aliases: ["Panado", "Panadol"], strength: "500mg", form: "Tablet", packSize: "20 tablets", blurb: "Paracetamol 500mg tablets for pain and fever, 20 tablets." },
-  { id: 2, name: "Diclofenac Gel", categorySlug: "pain", priceNgwee: k(32), rx: false, genericName: "Diclofenac", aliases: ["Voltaren"], form: "Gel", packSize: "50g tube", blurb: "Topical gel for muscle and joint pain, 50g tube." },
-  { id: 3, name: "Coartem 20/120mg", categorySlug: "malaria", priceNgwee: k(55), rx: false, genericName: "Artemether/Lumefantrine", aliases: ["Co-Artem"], strength: "20/120mg", form: "Tablet", packSize: "24 tablets", blurb: "Artemether/lumefantrine, 24-tablet course for adults." },
-  { id: 4, name: "Duo-Cotecxin", categorySlug: "malaria", priceNgwee: k(68), rx: true, genericName: "Dihydroartemisinin/Piperaquine", aliases: ["DHA-PQP"], form: "Tablet", blurb: "Dihydroartemisinin/piperaquine, prescription antimalarial course." },
-  { id: 5, name: "Metformin 500mg", categorySlug: "chronic", priceNgwee: k(35), rx: true, genericName: "Metformin", aliases: ["Glucophage"], strength: "500mg", form: "Tablet", packSize: "60 tablets", blurb: "Blood sugar control tablets, 60-tablet pack." },
-  { id: 6, name: "Amlodipine 5mg", categorySlug: "chronic", priceNgwee: k(38), rx: true, genericName: "Amlodipine", aliases: ["Norvasc"], strength: "5mg", form: "Tablet", packSize: "30 tablets", blurb: "Blood pressure tablets, 30-tablet pack." },
-  { id: 7, name: "Insulin Mixtard 30/70", categorySlug: "chronic", priceNgwee: k(120), rx: true, genericName: "Insulin (human, biphasic)", aliases: ["Mixtard", "Insulin"], form: "Injection", packSize: "10ml vial", blurb: "Injectable insulin, 10ml vial. Keep refrigerated after opening." },
-  { id: 8, name: "Piriton Tablets", categorySlug: "cold", priceNgwee: k(20), rx: false, genericName: "Chlorphenamine", aliases: ["Chlorpheniramine", "Piriton"], form: "Tablet", packSize: "30 tablets", blurb: "Chlorphenamine for allergy and cold symptoms, 30 tablets." },
-  { id: 9, name: "Broncho Cough Syrup", categorySlug: "cold", priceNgwee: k(27), rx: false, form: "Syrup", packSize: "100ml", blurb: "Soothing syrup for dry and chesty cough, 100ml." },
-  { id: 10, name: "Vitamin C 1000mg", categorySlug: "vitamins", priceNgwee: k(30), rx: false, genericName: "Ascorbic acid", aliases: ["Vitamin C"], strength: "1000mg", form: "Effervescent tablet", packSize: "20 tablets", blurb: "Immune support effervescent tablets, 20-tablet tube." },
-  { id: 11, name: "Multivitamin Syrup", categorySlug: "vitamins", priceNgwee: k(33), rx: false, genericName: "Multivitamin", form: "Syrup", packSize: "200ml", blurb: "Daily multivitamin syrup for adults, 200ml." },
-  { id: 12, name: "ORS + Zinc Sachets", categorySlug: "baby", priceNgwee: k(22), rx: false, genericName: "Oral rehydration salts + Zinc", aliases: ["ORS"], form: "Sachet", packSize: "10 sachets", blurb: "Oral rehydration salts with zinc for children, pack of 10." },
-  { id: 13, name: "Baby Paracetamol Syrup", categorySlug: "baby", priceNgwee: k(28), rx: false, genericName: "Paracetamol", aliases: ["Panado"], form: "Syrup", packSize: "100ml", blurb: "Infant fever and pain relief syrup, 100ml." },
+  { id: 1, name: "Panadol Extra", categorySlug: "pain", priceNgwee: k(25), rx: false, genericName: "Paracetamol", aliases: ["Panado", "Panadol"], strength: "500mg", form: "Tablet", packSize: "20 tablets", blurb: "Paracetamol 500mg tablets, 20 tablets." },
+  { id: 2, name: "Diclofenac Gel", categorySlug: "pain", priceNgwee: k(32), rx: false, genericName: "Diclofenac", aliases: ["Voltaren"], form: "Gel", packSize: "50g tube", blurb: "Diclofenac gel, 50g tube." },
+  { id: 3, name: "Coartem 20/120mg", categorySlug: "malaria", priceNgwee: k(55), rx: false, genericName: "Artemether/Lumefantrine", aliases: ["Co-Artem"], strength: "20/120mg", form: "Tablet", packSize: "24 tablets", blurb: "Artemether/lumefantrine 20/120mg tablets, 24 tablets." },
+  { id: 4, name: "Duo-Cotecxin", categorySlug: "malaria", priceNgwee: k(68), rx: true, genericName: "Dihydroartemisinin/Piperaquine", aliases: ["DHA-PQP"], form: "Tablet", blurb: "Dihydroartemisinin/piperaquine tablets." },
+  { id: 5, name: "Metformin 500mg", categorySlug: "chronic", priceNgwee: k(35), rx: true, genericName: "Metformin", aliases: ["Glucophage"], strength: "500mg", form: "Tablet", packSize: "60 tablets", blurb: "Metformin 500mg tablets, 60 tablets." },
+  { id: 6, name: "Amlodipine 5mg", categorySlug: "chronic", priceNgwee: k(38), rx: true, genericName: "Amlodipine", aliases: ["Norvasc"], strength: "5mg", form: "Tablet", packSize: "30 tablets", blurb: "Amlodipine 5mg tablets, 30 tablets." },
+  { id: 7, name: "Insulin Mixtard 30/70", categorySlug: "chronic", priceNgwee: k(120), rx: true, genericName: "Insulin (human, biphasic)", aliases: ["Mixtard", "Insulin"], form: "Injection", packSize: "10ml vial", blurb: "Insulin (human, biphasic) injection, 10ml vial. Keep refrigerated after opening." },
+  { id: 8, name: "Piriton Tablets", categorySlug: "cold", priceNgwee: k(20), rx: false, genericName: "Chlorphenamine", aliases: ["Chlorpheniramine", "Piriton"], form: "Tablet", packSize: "30 tablets", blurb: "Chlorphenamine tablets, 30 tablets." },
+  { id: 9, name: "Broncho Cough Syrup", categorySlug: "cold", priceNgwee: k(27), rx: false, form: "Syrup", packSize: "100ml", blurb: "Cough syrup, 100ml." },
+  { id: 10, name: "Vitamin C 1000mg", categorySlug: "vitamins", priceNgwee: k(30), rx: false, genericName: "Ascorbic acid", aliases: ["Vitamin C"], strength: "1000mg", form: "Effervescent tablet", packSize: "20 tablets", blurb: "Vitamin C 1000mg effervescent tablets, 20 tablets." },
+  { id: 11, name: "Multivitamin Syrup", categorySlug: "vitamins", priceNgwee: k(33), rx: false, genericName: "Multivitamin", form: "Syrup", packSize: "200ml", blurb: "Multivitamin syrup, 200ml." },
+  { id: 12, name: "ORS + Zinc Sachets", categorySlug: "baby", priceNgwee: k(22), rx: false, genericName: "Oral rehydration salts + Zinc", aliases: ["ORS"], form: "Sachet", packSize: "10 sachets", blurb: "Oral rehydration salts with zinc, 10 sachets." },
+  { id: 13, name: "Baby Paracetamol Syrup", categorySlug: "baby", priceNgwee: k(28), rx: false, genericName: "Paracetamol", aliases: ["Panado"], form: "Syrup", packSize: "100ml", blurb: "Paracetamol syrup, 100ml." },
 ];
 
 const PHARMACIES = [

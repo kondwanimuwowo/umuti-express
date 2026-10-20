@@ -375,7 +375,7 @@ export async function getOrCreateThread(profileId: string) {
       messages: {
         create: {
           authorRole: "PHARMACIST",
-          body: "Hello, I'm Chanda, one of our pharmacists. How can I help you today?",
+          body: "Hello. Ask your question here and the pharmacy team will reply. For an emergency, go to the nearest health facility instead.",
         },
       },
     },

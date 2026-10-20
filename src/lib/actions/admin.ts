@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/staff";
 import { createClient } from "@/lib/supabase/server";
 import { DOCUMENT_BUCKET } from "@/lib/storage";
 import { logAccess } from "@/lib/audit";
+import { hasAcceptedCurrent } from "@/lib/legal";
 
 const reviewSchema = z.object({
   id: z.string().min(1),
@@ -32,6 +33,13 @@ export async function reviewPharmacy(input: z.input<typeof reviewSchema>) {
   }
   if (decision === "ACTIVE" && (lat === undefined || lng === undefined)) {
     return { ok: false as const, error: "Set the pharmacy's map location before activating it." };
+  }
+
+  if (decision === "ACTIVE") {
+    const owner = await prisma.profile.findFirst({ where: { pharmacyId: id, isPharmacyOwner: true }, select: { id: true } });
+    if (!owner || !(await hasAcceptedCurrent(owner.id, "PARTNER"))) {
+      return { ok: false as const, error: "The pharmacy has not accepted the current Partner Agreement." };
+    }
   }
 
   await prisma.$transaction([

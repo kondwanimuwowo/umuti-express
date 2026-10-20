@@ -8,6 +8,7 @@ import { requireProfile } from "@/lib/auth";
 import { requireOwner } from "@/lib/staff";
 import { createClient } from "@/lib/supabase/server";
 import { DOCUMENT_BUCKET } from "@/lib/storage";
+import { hasAcceptedCurrent, recordAcceptance } from "@/lib/legal";
 import type { DocumentType } from "@/generated/prisma";
 
 const MAX_BYTES = 8 * 1024 * 1024;
@@ -47,6 +48,9 @@ function validateDocument(file: unknown, label: string): { file: File } | { erro
 export async function applyAsPharmacy(formData: FormData): Promise<Result> {
   const profile = await requireProfile("/partner/apply");
   if (profile.pharmacyId) return { ok: false, error: "Your account is already linked to a pharmacy." };
+  if (formData.get("acceptAgreement") !== "on") {
+    return { ok: false, error: "Accept the Pharmacy Partner Agreement on behalf of the pharmacy to apply." };
+  }
 
   const parsed = pharmacyFields.safeParse({
     name: formData.get("name"),
@@ -97,6 +101,8 @@ export async function applyAsPharmacy(formData: FormData): Promise<Result> {
     }),
     prisma.profile.update({ where: { id: profile.id }, data: { pharmacyId: id, isPharmacyOwner: true } }),
   ]);
+
+  await recordAcceptance({ profileId: profile.id, types: ["PARTNER"], pharmacyId: id });
 
   revalidatePath("/dashboard");
   return { ok: true, message: "Application sent. We will review your documents." };
@@ -195,4 +201,15 @@ export async function joinPharmacy(input: { token: string }): Promise<Result> {
 
   revalidatePath("/dashboard");
   return { ok: true, message: `You joined ${invite.pharmacy.name}` };
+}
+
+/** The owner accepts the current version of the partner agreement, for a pharmacy that has not yet accepted it. */
+export async function acceptPartnerAgreement(): Promise<Result> {
+  const { profile, pharmacy } = await requireOwner("/dashboard/agreement");
+  if (await hasAcceptedCurrent(profile.id, "PARTNER")) return { ok: true, message: "Already accepted" };
+
+  await recordAcceptance({ profileId: profile.id, types: ["PARTNER"], pharmacyId: pharmacy.id });
+
+  revalidatePath("/dashboard", "layout");
+  return { ok: true, message: "Agreement accepted" };
 }

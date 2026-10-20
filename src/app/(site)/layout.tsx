@@ -10,11 +10,11 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
 
       <footer className="mt-20 bg-navy py-12 text-white">
         <div className="shell-container">
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr]">
+          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
             <div>
               <div className="mb-3 font-display text-[19px] font-bold">Umuti Express</div>
               <p className="max-w-[280px] text-[13.5px] leading-relaxed text-white/60">
-                Online ordering for medicines, in partnership with pharmacies across Lusaka.
+                A marketplace of independent pharmacies in Lusaka. Umuti Express does not sell medicines itself.
               </p>
             </div>
 
@@ -33,7 +33,22 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
               <Link href="/chat" className="text-[13.5px] text-white/80 no-underline hover:text-white">
                 Chat with a pharmacist
               </Link>
-              <span className="text-[13.5px] text-white/80">+260 97 000 0000</span>
+            </div>
+
+            <div className="flex flex-col gap-2.5">
+              <div className="mb-1 text-[12px] font-bold tracking-wider text-white/50 uppercase">Legal</div>
+              <Link href="/legal/terms" className="text-[13.5px] text-white/80 no-underline hover:text-white">
+                Terms of Service
+              </Link>
+              <Link href="/legal/privacy" className="text-[13.5px] text-white/80 no-underline hover:text-white">
+                Privacy Policy
+              </Link>
+              <Link href="/legal/medical-disclaimer" className="text-[13.5px] text-white/80 no-underline hover:text-white">
+                Medical Disclaimer
+              </Link>
+              <Link href="/legal/partner-agreement" className="text-[13.5px] text-white/80 no-underline hover:text-white">
+                Pharmacy Partner Agreement
+              </Link>
             </div>
           </div>
 

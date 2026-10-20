@@ -12,6 +12,7 @@ import { chargeMobileMoney } from "@/lib/payments";
 import { checkUpload, fileExtension } from "@/lib/uploads";
 import { PRESCRIPTION_BUCKET } from "@/lib/storage";
 import { createClient } from "@/lib/supabase/server";
+import { recordAcceptance } from "@/lib/legal";
 import type { OrderStatus } from "@/generated/prisma";
 
 const checkoutSchema = z.object({
@@ -23,7 +24,7 @@ const checkoutSchema = z.object({
     .trim()
     .regex(/^(\+?260|0)(9[5-7]|7[5-7])\d{7}$/, "Enter a valid MTN or Airtel number, e.g. 0977123456"),
   address: z.string().trim().max(300).optional(),
-  consent: z.literal(true, { error: "Agree to share your details with the pharmacy to place the order." }),
+  consent: z.literal(true, { error: "Agree to the terms and to sharing your details with the pharmacy to place the order." }),
 });
 
 class StockError extends Error {}
@@ -58,6 +59,9 @@ export async function placeOrder(formData: FormData) {
   const cart = await getCart(profile.id);
   if (cart.items.length === 0 || !cart.pharmacy) return { ok: false as const, error: "Your cart is empty." };
   const pharmacy = cart.pharmacy;
+
+  // Placing an order is also acceptance of the current terms and privacy policy.
+  await recordAcceptance({ profileId: profile.id, types: ["TERMS", "PRIVACY"] });
 
   if (input.fulfilment === "DELIVERY" && !pharmacy.offersDelivery) {
     return { ok: false as const, error: `${pharmacy.name} does not offer delivery. Choose pickup.` };

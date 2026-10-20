@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { signUp } from "@/lib/actions/account";
 import { AuthField } from "@/components/AuthField";
 
@@ -41,6 +42,21 @@ export function SignUpForm() {
         hint="At least 8 characters"
         required
       />
+
+      <label className="flex items-start gap-3 text-[13.5px] leading-relaxed text-ink-70">
+        <input type="checkbox" name="acceptTerms" required className="mt-1 h-4 w-4 shrink-0 accent-[var(--color-green)]" />
+        <span>
+          I agree to the{" "}
+          <Link href="/legal/terms" target="_blank" className="font-bold text-green-dark">
+            Terms of Service
+          </Link>{" "}
+          and the{" "}
+          <Link href="/legal/privacy" target="_blank" className="font-bold text-green-dark">
+            Privacy Policy
+          </Link>
+          .
+        </span>
+      </label>
 
       {error && (
         <p role="alert" className="rounded-inner bg-[#fbe4e4] px-4 py-3 text-[13.5px] font-semibold text-[#9b2c2c]">
