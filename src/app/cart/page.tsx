@@ -63,7 +63,7 @@ export default async function CartPage() {
                     {item.listing.stock > 0 ? `Only ${item.listing.stock} in stock` : "No longer available"}
                   </span>
                 )}
-                {item.product.rx && !cart.approvedIds.has(item.productId) && (
+                {item.product.classification === "PRESCRIPTION" && !cart.approvedIds.has(item.productId) && (
                   <Link
                     href={`/prescription/${item.productId}`}
                     className="mt-2 inline-block rounded-full bg-amber-tint px-2.5 py-1 text-[11.5px] font-bold text-amber no-underline"

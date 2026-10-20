@@ -28,8 +28,9 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   ]);
 
   // Latest prescription for this product, to show where the request stands.
+  const needsRx = product.classification === "PRESCRIPTION";
   const rx =
-    product.rx && profile
+    needsRx && profile
       ? await prisma.prescription.findFirst({
           where: { profileId: profile.id, productId: product.id },
           orderBy: { createdAt: "desc" },
@@ -81,7 +82,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
             )}
           </div>
 
-          {product.rx && (
+          {needsRx && (
             <div className="mt-4 rounded-inner bg-amber-tint px-4 py-3 text-[13.5px] leading-relaxed text-amber">
               <strong className="font-bold">Prescription required.</strong>{" "}
               {rx
@@ -120,7 +121,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                       <AddToCartButton
                         productId={product.id}
                         pharmacyId={l.pharmacyId}
-                        rx={product.rx}
+                        rx={needsRx}
                         rxApproved={rxApproved}
                         inStock={l.stock > 0}
                         compact

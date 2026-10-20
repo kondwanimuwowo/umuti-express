@@ -29,6 +29,8 @@ type SummaryRow = Prisma.ProductGetPayload<{ include: typeof summaryInclude }>;
 
 /** A catalogue product with what its available listings add up to. */
 export type ProductSummary = Omit<SummaryRow, "pharmacyProducts"> & {
+  /** Prescription-only: needs an approved prescription before it can be bought. */
+  rx: boolean;
   fromPriceNgwee: number;
   listingCount: number;
   /** Set only when exactly one pharmacy lists it, so a card can add to cart directly. */
@@ -38,6 +40,7 @@ export type ProductSummary = Omit<SummaryRow, "pharmacyProducts"> & {
 function toSummary({ pharmacyProducts, ...product }: SummaryRow): ProductSummary {
   return {
     ...product,
+    rx: product.classification === "PRESCRIPTION",
     fromPriceNgwee: Math.min(...pharmacyProducts.map((l) => l.priceNgwee)),
     listingCount: pharmacyProducts.length,
     soleListingPharmacyId: pharmacyProducts.length === 1 ? pharmacyProducts[0].pharmacyId : null,
@@ -48,15 +51,19 @@ function toSummary({ pharmacyProducts, ...product }: SummaryRow): ProductSummary
  * Product ids matching a search, best first. Matches name, generic name and brand aliases,
  * by substring or trigram similarity, so "paracetamol" and "panado" both find Panadol.
  */
-async function searchProductIds(q: string): Promise<number[]> {
+async function searchProductIds(q: string, pharmacyId?: string): Promise<number[]> {
   const term = q.trim().slice(0, 80);
   if (!term) return [];
   const like = `%${term.replace(/[\\%_]/g, "\\$&")}%`;
+  // Customers see approved products. A pharmacy also sees its own products awaiting approval.
+  const visible = pharmacyId
+    ? Prisma.sql`(p.status = 'APPROVED' OR (p.status = 'PENDING' AND p."createdByPharmacyId" = ${pharmacyId}))`
+    : Prisma.sql`p.status = 'APPROVED'`;
 
   const rows = await prisma.$queryRaw<{ id: number }[]>(Prisma.sql`
     SELECT p.id
     FROM "Product" p
-    WHERE p.status = 'APPROVED'
+    WHERE ${visible}
       AND (
         p.name ILIKE ${like}
         OR p."genericName" ILIKE ${like}
@@ -73,6 +80,71 @@ async function searchProductIds(q: string): Promise<number[]> {
     LIMIT 60
   `);
   return rows.map((r) => r.id);
+}
+
+export type CatalogueMatch = {
+  id: number;
+  name: string;
+  genericName: string | null;
+  strength: string | null;
+  form: string | null;
+  packSize: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  /** This pharmacy already lists it. */
+  listed: boolean;
+};
+
+/** Typeahead for a pharmacy adding stock: catalogue matches, flagged where it already lists them. */
+export async function searchCatalogue(q: string, pharmacyId: string): Promise<CatalogueMatch[]> {
+  const ids = (await searchProductIds(q, pharmacyId)).slice(0, 8);
+  if (ids.length === 0) return [];
+  const rows = await prisma.product.findMany({
+    where: { id: { in: ids } },
+    select: {
+      id: true,
+      name: true,
+      genericName: true,
+      strength: true,
+      form: true,
+      packSize: true,
+      status: true,
+      pharmacyProducts: { where: { pharmacyId }, select: { id: true } },
+    },
+  });
+  const rank = new Map(ids.map((id, i) => [id, i]));
+  return rows
+    .sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0))
+    .map(({ pharmacyProducts, ...p }) => ({ ...p, listed: pharmacyProducts.length > 0 }));
+}
+
+/** Everything a pharmacy lists, including products still waiting for approval. */
+export async function getPharmacyListings(pharmacyId: string) {
+  return prisma.pharmacyProduct.findMany({
+    where: { pharmacyId },
+    orderBy: { product: { name: "asc" } },
+    include: { product: { include: { category: true } } },
+  });
+}
+
+/** Products awaiting admin approval, oldest first. */
+export async function getCatalogueQueue() {
+  return prisma.product.findMany({
+    where: { status: "PENDING" },
+    orderBy: { createdAt: "asc" },
+    include: { category: true, createdByPharmacy: { select: { name: true } } },
+  });
+}
+
+/** Approved products for admin to find and re-classify. */
+export async function searchApprovedProducts(q: string) {
+  const ids = await searchProductIds(q);
+  if (ids.length === 0) return [];
+  const rows = await prisma.product.findMany({
+    where: { id: { in: ids } },
+    include: { category: true, createdByPharmacy: { select: { name: true } } },
+  });
+  const rank = new Map(ids.map((id, i) => [id, i]));
+  return rows.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0)).slice(0, 20);
 }
 
 export async function getProducts({ q, category, take }: ProductFilter = {}): Promise<ProductSummary[]> {
@@ -160,7 +232,7 @@ export async function getCart(profileId: string) {
   );
 
   // An Rx item may only be checked out once a pharmacist has approved a prescription for it.
-  const rxProductIds = items.filter((i) => i.product.rx).map((i) => i.productId);
+  const rxProductIds = items.filter((i) => i.product.classification === "PRESCRIPTION").map((i) => i.productId);
   const approved = rxProductIds.length
     ? await prisma.prescription.findMany({
         where: { profileId, productId: { in: rxProductIds }, status: "APPROVED" },
@@ -168,7 +240,7 @@ export async function getCart(profileId: string) {
       })
     : [];
   const approvedIds = new Set(approved.map((p) => p.productId));
-  const blockedItems = items.filter((i) => i.product.rx && !approvedIds.has(i.productId));
+  const blockedItems = items.filter((i) => i.product.classification === "PRESCRIPTION" && !approvedIds.has(i.productId));
 
   return { items, count, pharmacy, subtotalNgwee, approvedIds, blockedItems, unavailableItems };
 }

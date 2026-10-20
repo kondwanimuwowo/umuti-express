@@ -32,7 +32,7 @@ export async function uploadPrescription(formData: FormData) {
   }
 
   const product = await prisma.product.findUnique({ where: { id: productId } });
-  if (!product?.rx) return { ok: false as const, error: "That product does not need a prescription." };
+  if (product?.classification !== "PRESCRIPTION") return { ok: false as const, error: "That product does not need a prescription." };
 
   const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
   const path = `${profile.id}/${productId}-${Date.now()}.${ext}`;

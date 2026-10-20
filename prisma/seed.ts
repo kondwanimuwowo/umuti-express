@@ -123,11 +123,11 @@ async function main() {
 
   for (const p of PRODUCTS) {
     const photo = PHOTOS[p.id];
-    const { priceNgwee: _price, ...product } = p;
+    const { priceNgwee: _price, rx, ...product } = p;
     const data = {
       ...product,
       aliases: p.aliases ?? [],
-      classification: p.rx ? ("PRESCRIPTION" as const) : ("GENERAL" as const),
+      classification: rx ? ("PRESCRIPTION" as const) : ("GENERAL" as const),
       imageSrc: photo?.src ?? null,
       imagePosition: photo?.position ?? null,
     };

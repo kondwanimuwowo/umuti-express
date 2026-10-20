@@ -183,8 +183,8 @@ model Product {
   packSize       String?
   classification ProductClassification @default(GENERAL)
   status         CatalogueStatus       @default(APPROVED)
-  /// Legacy until phase 4: the app still reads this. Superseded by classification.
-  rx             Boolean               @default(false)
+  /// Admin's reason when a pharmacy-added product is not approved.
+  reviewNote     String?
   imageSrc       String?
   imagePosition  String?
   createdAt      DateTime              @default(now())

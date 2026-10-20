@@ -8,10 +8,15 @@ type NavItem = { href: string; label: string; count?: number };
 export function DashboardNav({ links }: { links: NavItem[] }) {
   const pathname = usePathname();
 
+  // The most specific match wins, so /dashboard/admin/catalogue does not also light up /dashboard/admin.
+  const current = links
+    .filter((l) => pathname === l.href || pathname.startsWith(l.href + "/"))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+
   return (
     <nav aria-label="Dashboard" className="flex gap-2 overflow-x-auto lg:flex-col lg:gap-1">
       {links.map((l) => {
-        const active = pathname === l.href || pathname.startsWith(l.href + "/");
+        const active = l.href === current;
         return (
           <Link
             key={l.href}

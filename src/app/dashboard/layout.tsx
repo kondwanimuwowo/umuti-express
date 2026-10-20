@@ -21,12 +21,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (staffAccess) {
     links.push(
       { href: "/dashboard/orders", label: "Orders", count: counts?.orders },
+      { href: "/dashboard/products", label: "Products" },
       { href: "/dashboard/prescriptions", label: "Prescriptions", count: counts?.prescriptions },
       { href: "/dashboard/chats", label: "Chats", count: counts?.chats },
     );
     if (profile.isPharmacyOwner) links.push({ href: "/dashboard/settings", label: "Settings" });
   }
-  if (isAdmin) links.push({ href: "/dashboard/admin", label: "Pharmacies" });
+  if (isAdmin) {
+    const [pendingPharmacies, pendingProducts] = await Promise.all([
+      prisma.pharmacy.count({ where: { status: "PENDING" } }),
+      prisma.product.count({ where: { status: "PENDING" } }),
+    ]);
+    links.push(
+      { href: "/dashboard/admin/catalogue", label: "Catalogue", count: pendingProducts },
+      { href: "/dashboard/admin", label: "Pharmacies", count: pendingPharmacies },
+    );
+  }
 
   // A pending or suspended pharmacy sees only its status page, with no navigation.
   if (links.length === 0) return <>{children}</>;

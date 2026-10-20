@@ -14,7 +14,7 @@ export default async function PrescriptionPage({ params }: { params: Promise<{ i
   if (!Number.isInteger(id)) notFound();
 
   const product = await getProduct(id);
-  if (!product?.rx) notFound();
+  if (product?.classification !== "PRESCRIPTION") notFound();
 
   const profile = await requireProfile(`/prescription/${id}`);
   const history = await prisma.prescription.findMany({

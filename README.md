@@ -88,7 +88,8 @@ and prints their logins in the terminal. Use it on a local or throwaway project 
 - `src/app/` one route per screen: `/`, `/shop`, `/product/[id]`, `/prescription/[id]`, `/pharmacies`,
   `/cart`, `/checkout`, `/order/confirmation`, `/track`, `/account`, `/chat`, `/sign-in`, `/sign-up`,
   `/partner/apply` (a pharmacy applies to list), `/join/[token]` (staff accept an invite), and the
-  staff-only `/dashboard` (orders, prescriptions, chats, settings; `/dashboard/admin` for admins)
+  staff-only `/dashboard` (orders, products, prescriptions, chats, settings; `/dashboard/admin` and
+  `/dashboard/admin/catalogue` for admins)
 - `prisma/schema.prisma` the data model; `prisma/seed.ts` the catalogue and demo users
 - `src/lib/queries.ts` server-side reads, `src/lib/actions/` server actions (cart, orders,
   prescriptions, chat, account, pharmacies)
@@ -105,7 +106,8 @@ and prints their logins in the terminal. Use it on a local or throwaway project 
   hidden and the owner has no staff access until an admin activates it. Owners edit the pharmacy's
   details and invite staff with single-use links from `/dashboard/settings`.
 - **Pharmacist (staff)** joins through an invite link and manages their own pharmacy's orders,
-  prescriptions and chats. Every dashboard query and action is scoped to that pharmacy.
+  products, prescriptions and chats. Staff add products from the shared catalogue or submit new ones,
+  which stay hidden from customers until an admin approves them and sets the classification. Every dashboard query and action is scoped to that pharmacy.
 - **Admin** reviews applications, sets each pharmacy's map location and activates or suspends it.
 
 A customer uploads a prescription; only a pharmacist at a pharmacy that lists the medicine can
