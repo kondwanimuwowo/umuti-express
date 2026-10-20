@@ -12,7 +12,7 @@ type Category = { slug: string; name: string };
 const detail = (p: { genericName?: string | null; strength?: string | null; form?: string | null; packSize?: string | null }) =>
   [p.genericName, p.strength, p.form, p.packSize].filter(Boolean).join(" · ");
 
-export function AddProduct({ categories }: { categories: Category[] }) {
+export function AddProduct({ categories, onClose }: { categories: Category[]; onClose?: () => void }) {
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<CatalogueMatch[]>([]);
   const [searched, setSearched] = useState(false);
@@ -53,6 +53,7 @@ export function AddProduct({ categories }: { categories: Category[] }) {
     setCreating(false);
     setSimilar([]);
     router.refresh();
+    onClose?.();
   };
 
   const submitListing = (formData: FormData) =>
@@ -98,7 +99,12 @@ export function AddProduct({ categories }: { categories: Category[] }) {
 
   return (
     <section className="rounded-card bg-white p-6 shadow-card">
-      <h2 className="font-display text-[17px] font-bold">Add a product</h2>
+      <div className="flex items-start justify-between gap-4">
+        <h2 className="font-display text-[17px] font-bold">Add a product</h2>
+        <button type="button" onClick={reset} className="text-[13px] font-bold text-ink-50 hover:text-ink">
+          Close
+        </button>
+      </div>
       <p className="mt-1 text-[13.5px] text-ink-62">
         Search first. If another pharmacy has already added it, you only set your price and stock.
       </p>

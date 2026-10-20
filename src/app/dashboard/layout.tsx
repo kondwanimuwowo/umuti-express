@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getStaffCounts } from "@/lib/queries";
-import { DashboardNav } from "./DashboardNav";
+import { DashboardShell, type NavSection } from "./DashboardShell";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const profile = await requireProfile("/dashboard");
@@ -14,40 +14,44 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!pharmacy && !isAdmin) redirect("/partner/apply");
 
   const staffAccess = pharmacy?.status === "ACTIVE" && (profile.role === "PHARMACIST" || isAdmin);
-
   const counts = staffAccess && pharmacy ? await getStaffCounts(pharmacy.id) : null;
 
-  const links: { href: string; label: string; count?: number }[] = [];
+  // A pending or suspended pharmacy gets the shell with no navigation, only its status page.
+  const sections: NavSection[] = [];
   if (staffAccess) {
-    links.push(
-      { href: "/dashboard/orders", label: "Orders", count: counts?.orders },
-      { href: "/dashboard/products", label: "Products" },
-      { href: "/dashboard/prescriptions", label: "Prescriptions", count: counts?.prescriptions },
-      { href: "/dashboard/chats", label: "Chats", count: counts?.chats },
-    );
-    if (profile.isPharmacyOwner) links.push({ href: "/dashboard/settings", label: "Settings" });
+    const links: NavSection["links"] = [
+      { href: "/dashboard/orders", label: "Orders", icon: "orders", count: counts?.orders },
+      { href: "/dashboard/products", label: "Products", icon: "products" },
+      { href: "/dashboard/prescriptions", label: "Prescriptions", icon: "prescriptions", count: counts?.prescriptions },
+      { href: "/dashboard/chats", label: "Chats", icon: "chats", count: counts?.chats },
+    ];
+    sections.push({ title: "Pharmacy", links });
   }
   if (isAdmin) {
     const [pendingPharmacies, pendingProducts] = await Promise.all([
       prisma.pharmacy.count({ where: { status: "PENDING" } }),
       prisma.product.count({ where: { status: "PENDING" } }),
     ]);
-    links.push(
-      { href: "/dashboard/admin/catalogue", label: "Catalogue", count: pendingProducts },
-      { href: "/dashboard/admin", label: "Pharmacies", count: pendingPharmacies },
-    );
+    sections.push({
+      title: "Platform",
+      links: [
+        { href: "/dashboard/admin/catalogue", label: "Catalogue", icon: "catalogue", count: pendingProducts },
+        { href: "/dashboard/admin", label: "Pharmacies", icon: "pharmacies", count: pendingPharmacies },
+      ],
+    });
   }
 
-  // A pending or suspended pharmacy sees only its status page, with no navigation.
-  if (links.length === 0) return <>{children}</>;
+  const roleLabel = isAdmin ? "Admin" : profile.isPharmacyOwner ? "Owner" : "Pharmacist";
 
   return (
-    <div className="shell-container grid gap-8 py-10 lg:grid-cols-[200px_1fr]">
-      <aside>
-        {pharmacy && <div className="mb-4 truncate font-display text-[15px] font-bold">{pharmacy.name}</div>}
-        <DashboardNav links={links} />
-      </aside>
-      <div className="min-w-0">{children}</div>
-    </div>
+    <DashboardShell
+      sections={sections}
+      settingsHref={staffAccess && profile.isPharmacyOwner ? "/dashboard/settings" : undefined}
+      pharmacyName={pharmacy?.name ?? null}
+      roleLabel={roleLabel}
+      user={{ name: profile.fullName ?? profile.email, email: profile.email }}
+    >
+      {children}
+    </DashboardShell>
   );
 }

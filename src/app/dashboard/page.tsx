@@ -18,7 +18,7 @@ export default async function DashboardPage() {
   const suspended = pharmacy.status === "SUSPENDED";
 
   return (
-    <div className="shell-container max-w-[560px] py-16 text-center">
+    <div className="mx-auto max-w-[560px] py-10 text-center">
       <h1 className="font-display text-[28px] font-bold">
         {suspended ? "Application not approved" : "Application under review"}
       </h1>
